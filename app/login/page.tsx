@@ -118,6 +118,12 @@ async function handleSignUp(formData: FormData): Promise<{ ok: boolean; error?: 
         });
 
         if (error) {
+          if (error.message.toLowerCase().includes('rate limit')) {
+            return {
+              ok: false,
+              error: 'Supabase email rate limit reached. In your Supabase Dashboard, go to Authentication > Providers > Email and turn OFF "Confirm email" to register instantly without rate limits.',
+            };
+          }
           return { ok: false, error: error.message };
         }
 
