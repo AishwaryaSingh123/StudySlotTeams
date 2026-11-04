@@ -34,3 +34,10 @@ design.md
 plan.md
 
 docs/
+# temp & report artifacts
+*.tmp
+*.dump
+temp_*
+template_dump.txt
+scratch/
+report_images/

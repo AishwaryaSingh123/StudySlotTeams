@@ -21,57 +21,65 @@ export function Dialog({
 }: DialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const triggerElementRef = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  const initialFocusRefRef = useRef(initialFocusRef);
+  initialFocusRefRef.current = initialFocusRef;
 
   useEffect(() => {
-    if (isOpen) {
-      triggerElementRef.current = document.activeElement as HTMLElement;
+    if (!isOpen) return;
 
-      const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
+    // Capture the trigger element when the dialog opens
+    triggerElementRef.current = document.activeElement as HTMLElement | null;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onCloseRef.current();
+      }
+
+      // Focus trap
+      if (e.key === 'Tab' && dialogRef.current) {
+        const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey && document.activeElement === first) {
           e.preventDefault();
-          onClose();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
         }
+      }
+    };
 
-        // Focus trap
-        if (e.key === 'Tab' && dialogRef.current) {
-          const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
-            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-          );
-          if (focusable.length === 0) return;
+    document.addEventListener('keydown', handleKeyDown);
 
-          const first = focusable[0];
-          const last = focusable[focusable.length - 1];
+    // Set initial focus once upon opening
+    const timer = setTimeout(() => {
+      if (initialFocusRefRef.current?.current) {
+        initialFocusRefRef.current.current.focus();
+      } else if (dialogRef.current) {
+        const firstInput = dialogRef.current.querySelector<HTMLElement>('input, button, select, textarea');
+        firstInput?.focus();
+      }
+    }, 50);
 
-          if (e.shiftKey && document.activeElement === first) {
-            e.preventDefault();
-            last.focus();
-          } else if (!e.shiftKey && document.activeElement === last) {
-            e.preventDefault();
-            first.focus();
-          }
-        }
-      };
-
-      document.addEventListener('keydown', handleKeyDown);
-
-      // Set initial focus
-      setTimeout(() => {
-        if (initialFocusRef?.current) {
-          initialFocusRef.current.focus();
-        } else if (dialogRef.current) {
-          const firstInput = dialogRef.current.querySelector<HTMLElement>('input, button, select, textarea');
-          firstInput?.focus();
-        }
-      }, 50);
-
-      return () => {
-        document.removeEventListener('keydown', handleKeyDown);
-        if (triggerElementRef.current) {
-          triggerElementRef.current.focus();
-        }
-      };
-    }
-  }, [isOpen, onClose, initialFocusRef]);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('keydown', handleKeyDown);
+      // Restore focus to trigger element only when the dialog actually closes/unmounts
+      if (triggerElementRef.current && typeof triggerElementRef.current.focus === 'function') {
+        triggerElementRef.current.focus();
+      }
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
