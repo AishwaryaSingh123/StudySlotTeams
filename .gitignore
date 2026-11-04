@@ -32,3 +32,8 @@ next-env.d.ts
 
 design.md 
 plan.md
+
+#report
+*.docx
+report_images/
+scripts/
