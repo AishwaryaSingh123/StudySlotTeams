@@ -48,11 +48,7 @@ The user interface adheres to the archival **reading-room ledger** visual identi
 
 StudySlot Teams uses an identical repository contract (`lib/repo/types.ts`) supporting dual backend configurations:
 
-1. **`DATA_BACKEND=mock` (Local MVP & Offline Evaluation)**
-   - File-backed atomic persistence in `data/.runtime/db.json`.
-   - In-process mutation queue with mutex lock preventing concurrent corruption.
-   - Seeded with 5 realistic academic profiles, 6 rooms, 2 teams, tasks, and historical activity logs.
-2. **`DATA_BACKEND=supabase` (Production Cloud Database)**
+ **`DATA_BACKEND=supabase` (Production Cloud Database)**
    - PostgreSQL schema with Row-Level Security (RLS) on all tables.
    - Postgres GiST exclusion constraint (`btree_gist` extension, `no_room_overlap`) enforcing zero double-booking at the database level.
    - Security-definer transactional RPCs preventing client role escalation.
