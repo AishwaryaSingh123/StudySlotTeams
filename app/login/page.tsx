@@ -7,61 +7,115 @@ export const metadata = {
   title: 'Sign In — StudySlot Teams',
 };
 
-async function handleSignIn(formData: FormData) {
+async function handleSignIn(formData: FormData): Promise<{ ok: boolean; error?: string; redirectUrl?: string }> {
   'use server';
 
   const email = (formData.get('email') as string)?.trim();
   const password = (formData.get('password') as string)?.trim();
 
   if (!email || !password) {
-    return { error: 'Please enter both email and password.' };
+    return { ok: false, error: 'Please enter both email and password.' };
   }
 
   const isSupabase = process.env.DATA_BACKEND === 'supabase';
 
   if (!isSupabase) {
-    // Mock mode password verification
-    if (password !== 'demo123') {
-      return { error: 'Invalid password. For seeded demo accounts, use "demo123".' };
-    }
-
     const authRepo = getAuthRepo();
     const user = await authRepo.getUserByEmail(email);
 
     if (!user) {
-      return { error: 'Invalid email or password.' };
+      return { ok: false, error: 'Account not found. Please check your email or click "Create account".' };
+    }
+
+    // In mock mode, check standard demo password
+    if (password !== 'demo123') {
+      return { ok: false, error: 'Invalid password. For demo accounts, use "demo123".' };
     }
 
     await setSessionUser(user.id);
-
-    if (user.role === 'staff_admin') {
-      redirect('/staff/rooms');
-    } else {
-      redirect('/rooms');
-    }
+    const redirectUrl = user.role === 'staff_admin' ? '/staff/rooms' : '/rooms';
+    return { ok: true, redirectUrl };
   } else {
-    // Supabase mode authentication
+    // Supabase mode
     try {
       const { getSupabaseClient } = await import('../../lib/supabase/server');
       const supabase = getSupabaseClient();
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
       if (error || !data.user) {
-        return { error: error?.message || 'Invalid email or password.' };
+        return { ok: false, error: error?.message || 'Invalid email or password.' };
       }
 
       await setSessionUser(data.user.id);
 
       const authRepo = getAuthRepo();
       const profile = await authRepo.getUserById(data.user.id);
-
-      if (profile?.role === 'staff_admin') {
-        redirect('/staff/rooms');
-      } else {
-        redirect('/rooms');
-      }
+      const redirectUrl = profile?.role === 'staff_admin' ? '/staff/rooms' : '/rooms';
+      return { ok: true, redirectUrl };
     } catch (err: any) {
-      return { error: err.message || 'Authentication failed.' };
+      return { ok: false, error: err.message || 'Authentication service error.' };
+    }
+  }
+}
+
+async function handleSignUp(formData: FormData): Promise<{ ok: boolean; error?: string; redirectUrl?: string }> {
+  'use server';
+
+  const fullName = (formData.get('full_name') as string)?.trim();
+  const email = (formData.get('email') as string)?.trim();
+  const password = (formData.get('password') as string)?.trim();
+
+  if (!fullName || fullName.length < 2) {
+    return { ok: false, error: 'Please enter your full name (at least 2 characters).' };
+  }
+  if (!email) {
+    return { ok: false, error: 'Please enter a valid email address.' };
+  }
+  if (!password || password.length < 6) {
+    return { ok: false, error: 'Password must be at least 6 characters long.' };
+  }
+
+  const isSupabase = process.env.DATA_BACKEND === 'supabase';
+
+  if (!isSupabase) {
+    const authRepo = getAuthRepo();
+    if (authRepo.signUp) {
+      const res = await authRepo.signUp({ fullName, email });
+      if (!res.ok) {
+        return { ok: false, error: res.error.message };
+      }
+
+      await setSessionUser(res.data.id);
+      return { ok: true, redirectUrl: '/rooms' };
+    } else {
+      return { ok: false, error: 'Sign up is not configured in this mode.' };
+    }
+  } else {
+    // Supabase mode
+    try {
+      const { getSupabaseClient } = await import('../../lib/supabase/server');
+      const supabase = getSupabaseClient();
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: fullName },
+        },
+      });
+
+      if (error || !data.user) {
+        return { ok: false, error: error?.message || 'Failed to register account.' };
+      }
+
+      const authRepo = getAuthRepo();
+      if (authRepo.signUp) {
+        await authRepo.signUp({ fullName, email });
+      }
+
+      await setSessionUser(data.user.id);
+      return { ok: true, redirectUrl: '/rooms' };
+    } catch (err: any) {
+      return { ok: false, error: err.message || 'Registration service error.' };
     }
   }
 }
@@ -105,7 +159,7 @@ export default async function LoginPage() {
             textAlign: 'center',
           }}
         >
-          Sign in to StudySlot Teams
+          StudySlot Teams
         </h1>
         <p
           style={{
@@ -118,7 +172,7 @@ export default async function LoginPage() {
           Campus study room reservations and team milestone ledger.
         </p>
 
-        <LoginForm onSignIn={handleSignIn} />
+        <LoginForm onSignIn={handleSignIn} onSignUp={handleSignUp} />
       </div>
     </div>
   );

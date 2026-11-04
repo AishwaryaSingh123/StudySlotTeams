@@ -51,4 +51,39 @@ export class SupabaseAuthRepo implements IAuthRepo {
 
     return { ok: true, data: data as Profile };
   }
+
+  async signUp(input: { fullName: string; email: string }): Promise<Result<Profile>> {
+    const supabase = getSupabaseClient();
+    const cleanEmail = input.email.trim().toLowerCase();
+    const cleanName = input.fullName.trim();
+
+    const existing = await this.getUserByEmail(cleanEmail);
+    if (existing) {
+      return {
+        ok: false,
+        error: { code: 'CONFLICT', message: 'An account with this email already exists. Please sign in.' },
+      };
+    }
+
+    const newId = `u-${Date.now().toString(36)}`;
+    const { data, error } = await supabase
+      .from('profiles')
+      .insert({
+        id: newId,
+        full_name: cleanName,
+        email: cleanEmail,
+        role: 'student',
+      })
+      .select()
+      .single();
+
+    if (error || !data) {
+      return {
+        ok: false,
+        error: { code: 'INTERNAL', message: error?.message || 'Failed to create profile.' },
+      };
+    }
+
+    return { ok: true, data: data as Profile };
+  }
 }

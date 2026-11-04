@@ -116,6 +116,36 @@ export function NewTeamSessionClient({
       });
     }
 
+    // 30-minute slot alignment check
+    const [sh, sm] = startTime.split(':').map(Number);
+    const [eh, em] = endTime.split(':').map(Number);
+    if ((sm !== undefined && sm % 30 !== 0) || (em !== undefined && em % 30 !== 0)) {
+      errors.push({
+        fieldId: 'session-start',
+        message: 'Sessions must align with 30-minute intervals (e.g. 14:00, 14:30).',
+      });
+    }
+
+    // Operating hours check
+    if (selectedRoom) {
+      const open = selectedRoom.opens_at.slice(0, 5);
+      const close = selectedRoom.closes_at.slice(0, 5);
+      if (startTime < open || endTime > close) {
+        errors.push({
+          fieldId: 'session-start',
+          message: `Session must be within room operating hours (${open}–${close}).`,
+        });
+      }
+    }
+
+    // Note limit check (280 chars)
+    if (sessionNote && sessionNote.length > 280) {
+      errors.push({
+        fieldId: 'session-note',
+        message: 'Session note cannot exceed 280 characters.',
+      });
+    }
+
     if (errors.length > 0) {
       setErrorSummary(errors);
       return;

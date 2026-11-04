@@ -91,8 +91,19 @@ export function MilestonesClient({
     setModalErrors([]);
 
     const errs: { fieldId?: string; message: string }[] = [];
-    if (!name.trim()) errs.push({ fieldId: 'ms-name-input', message: 'Milestone name is required.' });
-    if (!dueDate) errs.push({ fieldId: 'ms-due-date-input', message: 'Due date is required.' });
+    if (!name.trim()) {
+      errs.push({ fieldId: 'ms-name-input', message: 'Milestone name is required.' });
+    } else if (name.trim().length > 100) {
+      errs.push({ fieldId: 'ms-name-input', message: 'Milestone name cannot exceed 100 characters.' });
+    }
+
+    if (!dueDate) {
+      errs.push({ fieldId: 'ms-due-date-input', message: 'Due date is required.' });
+    }
+
+    if (description && description.length > 500) {
+      errs.push({ fieldId: 'ms-desc-input', message: 'Description cannot exceed 500 characters.' });
+    }
 
     if (errs.length > 0) {
       setModalErrors(errs);

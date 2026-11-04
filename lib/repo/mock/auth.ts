@@ -47,4 +47,30 @@ export class MockAuthRepo implements IAuthRepo {
       };
     });
   }
+
+  async signUp(input: { fullName: string; email: string }): Promise<Result<Profile>> {
+    return withLock((db) => {
+      const cleanEmail = input.email.trim().toLowerCase();
+      const cleanName = input.fullName.trim();
+
+      const existing = db.profiles.find((p) => p.email.toLowerCase() === cleanEmail);
+      if (existing) {
+        return {
+          ok: false,
+          error: { code: 'CONFLICT', message: 'An account with this email already exists. Please sign in.' },
+        };
+      }
+
+      const newProfile: Profile = {
+        id: `u-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`,
+        full_name: cleanName,
+        email: cleanEmail,
+        role: 'student', // strictly enforced student role
+        created_at: new Date().toISOString(),
+      };
+
+      db.profiles.push(newProfile);
+      return { ok: true, data: { ...newProfile } };
+    });
+  }
 }

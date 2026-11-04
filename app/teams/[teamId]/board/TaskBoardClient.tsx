@@ -111,8 +111,23 @@ export function TaskBoardClient({
     e.preventDefault();
     setModalErrors([]);
 
+    const errors: { fieldId?: string; message: string }[] = [];
     if (!formTitle.trim()) {
-      setModalErrors([{ fieldId: 'task-title-input', message: 'Task title is required.' }]);
+      errors.push({ fieldId: 'task-title-input', message: 'Task title is required.' });
+    } else if (formTitle.trim().length > 100) {
+      errors.push({ fieldId: 'task-title-input', message: 'Task title cannot exceed 100 characters.' });
+    }
+
+    if (formDesc && formDesc.length > 500) {
+      errors.push({ fieldId: 'task-desc-input', message: 'Task description cannot exceed 500 characters.' });
+    }
+
+    if (isNaN(formPoints) || formPoints < 1 || formPoints > 20) {
+      errors.push({ fieldId: 'task-points-input', message: 'Story points must be between 1 and 20.' });
+    }
+
+    if (errors.length > 0) {
+      setModalErrors(errors);
       return;
     }
 

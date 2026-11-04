@@ -9,6 +9,7 @@ import { Button } from '../../components/Button';
 import { TextField } from '../../components/TextField';
 import { Select } from '../../components/Select';
 import { DataTable, Column } from '../../components/DataTable';
+import { FormErrorSummary } from '../../components/FormErrorSummary';
 
 const EQUIPMENT_OPTIONS: { id: EquipmentType; label: string }[] = [
   { id: 'whiteboard', label: 'Whiteboard' },
@@ -47,6 +48,7 @@ export function RoomSearchClient({
   const [selectedEquipment, setSelectedEquipment] = useState<EquipmentType[]>(initialParams.equipment || []);
   const [building, setBuilding] = useState<string>(initialParams.building || '');
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+  const [searchErrors, setSearchErrors] = useState<{ fieldId?: string; message: string }[]>([]);
 
   // Sorting
   const [sortBy, setSortBy] = useState<'capacity' | 'name' | 'availability'>('availability');
@@ -60,6 +62,35 @@ export function RoomSearchClient({
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    setSearchErrors([]);
+
+    const errors: { fieldId?: string; message: string }[] = [];
+    if (!date) {
+      errors.push({ fieldId: 'filter-date', message: 'Date is required.' });
+    }
+    if (!startTime) {
+      errors.push({ fieldId: 'filter-start', message: 'Start time is required.' });
+    }
+    if (!endTime) {
+      errors.push({ fieldId: 'filter-end', message: 'End time is required.' });
+    }
+    if (startTime && endTime && startTime >= endTime) {
+      errors.push({ fieldId: 'filter-end', message: 'End time must be after start time.' });
+    }
+    if (minCapacity) {
+      const cap = parseInt(minCapacity, 10);
+      if (isNaN(cap) || cap < 1) {
+        errors.push({ fieldId: 'filter-capacity', message: 'Minimum capacity must be at least 1 person.' });
+      } else if (cap > 50) {
+        errors.push({ fieldId: 'filter-capacity', message: 'Minimum capacity cannot exceed 50 people.' });
+      }
+    }
+
+    if (errors.length > 0) {
+      setSearchErrors(errors);
+      return;
+    }
+
     startTransition(() => {
       const q = new URLSearchParams();
       if (date) q.set('date', date);
@@ -74,6 +105,7 @@ export function RoomSearchClient({
   };
 
   const handleClearFilters = () => {
+    setSearchErrors([]);
     setDate('2026-11-12');
     setStartTime('14:00');
     setEndTime('15:00');
@@ -256,6 +288,8 @@ export function RoomSearchClient({
             <p style={{ fontSize: '0.85rem', color: 'var(--color-slate)', marginBottom: '16px' }}>
               Fields marked <span style={{ color: 'var(--color-error-text)' }}>*</span> are required.
             </p>
+
+            <FormErrorSummary errors={searchErrors} />
 
             <TextField
               id="filter-date"

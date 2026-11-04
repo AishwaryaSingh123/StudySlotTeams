@@ -82,6 +82,33 @@ export function BookingFormClient({
       });
     }
 
+    // 30-minute slot alignment check
+    const [sh, sm] = startTime.split(':').map(Number);
+    const [eh, em] = endTime.split(':').map(Number);
+    if ((sm !== undefined && sm % 30 !== 0) || (em !== undefined && em % 30 !== 0)) {
+      errors.push({
+        fieldId: 'booking-start',
+        message: 'Bookings must align with 30-minute intervals (e.g. 14:00, 14:30).',
+      });
+    }
+
+    // Operating hours check
+    const open = room.opens_at.slice(0, 5);
+    const close = room.closes_at.slice(0, 5);
+    if (startTime < open || endTime > close) {
+      errors.push({
+        fieldId: 'booking-start',
+        message: `Booking must be within room operating hours (${open}–${close}).`,
+      });
+    }
+
+    if (purpose && purpose.length > 280) {
+      errors.push({
+        fieldId: 'booking-purpose',
+        message: 'Purpose or note cannot exceed 280 characters.',
+      });
+    }
+
     if (dailyHoursUsed + duration > rules.max_hours_per_day) {
       errors.push({
         message: `You have booked ${dailyHoursUsed}h of ${rules.max_hours_per_day}h allowed today. Requesting ${duration}h exceeds the limit.`,

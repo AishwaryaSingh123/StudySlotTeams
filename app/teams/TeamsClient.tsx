@@ -70,6 +70,10 @@ export function TeamsClient({ initialTeams, onCreateTeam, onJoinTeam }: TeamsCli
       setJoinErrors([{ fieldId: 'join-code-input', message: 'Enter a 6-character team join code.' }]);
       return;
     }
+    if (joinCode.trim().length !== 6) {
+      setJoinErrors([{ fieldId: 'join-code-input', message: 'Team join code must be exactly 6 characters.' }]);
+      return;
+    }
 
     setJoinLoading(true);
     try {
