@@ -481,20 +481,23 @@ export function StaffRulesClient({
             <div
               style={{
                 display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
+                alignItems: 'flex-start',
+                gap: '12px',
                 color: 'var(--color-warning-text)',
                 backgroundColor: 'var(--color-warning-bg)',
-                padding: '12px',
+                border: '1px solid rgba(107, 66, 0, 0.25)',
+                padding: '12px 16px',
                 borderRadius: 'var(--radius-sm)',
                 marginBottom: '16px',
-                fontWeight: 600,
+                fontSize: '0.95rem',
+                lineHeight: 1.5,
               }}
             >
-              <AlertTriangle size={20} aria-hidden="true" />
-              <span>
+              <AlertTriangle size={20} aria-hidden="true" style={{ flexShrink: 0, marginTop: '2px' }} />
+              <div>
+                <strong>Action Required: </strong>
                 {impactModal.affectedBookings.length} confirmed booking{impactModal.affectedBookings.length === 1 ? '' : 's'} fall within this blackout period ({impactModal.blackout.start_date} to {impactModal.blackout.end_date}).
-              </span>
+              </div>
             </div>
 
             <p style={{ fontSize: '0.95rem', color: 'var(--color-ink)', marginBottom: '16px' }}>
@@ -512,6 +515,7 @@ export function StaffRulesClient({
                     style={{
                       padding: '8px 12px',
                       backgroundColor: 'var(--color-sand)',
+                      border: '1px solid var(--color-rule)',
                       borderRadius: 'var(--radius-sm)',
                       fontSize: '0.9rem',
                       display: 'flex',
@@ -528,32 +532,41 @@ export function StaffRulesClient({
               </ul>
             </div>
 
-            <p style={{ fontSize: '0.95rem', color: 'var(--color-slate)', marginBottom: '20px' }}>
+            <p style={{ fontSize: '0.95rem', color: 'var(--color-slate)', marginBottom: '16px' }}>
               Choose how you want to handle these appointments:
             </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {/* Action buttons in 1 horizontal line with standard visual hierarchy & high contrast */}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'row',
+                justifyContent: 'flex-end',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '12px',
+                marginTop: '20px',
+                paddingTop: '16px',
+                borderTop: '1px solid var(--color-rule)',
+              }}
+            >
               <Button
-                variant="primary"
-                loading={cancelLoading}
-                loadingText="Cancelling & notifying..."
-                onClick={handleCancelAffectedAndNotify}
-                style={{
-                  backgroundColor: 'var(--color-error-text)',
-                  borderColor: 'var(--color-error-text)',
-                  justifyContent: 'center',
-                }}
-              >
-                Cancel all affected bookings & notify students
-              </Button>
-
-              <Button
+                type="button"
                 variant="secondary"
                 disabled={cancelLoading}
                 onClick={handleKeepAsExceptions}
-                style={{ justifyContent: 'center' }}
               >
-                Keep existing bookings as exceptions
+                Keep existing bookings
+              </Button>
+
+              <Button
+                type="button"
+                variant="destructive"
+                loading={cancelLoading}
+                loadingText="Cancelling..."
+                onClick={handleCancelAffectedAndNotify}
+              >
+                Cancel all affected bookings
               </Button>
             </div>
           </div>
