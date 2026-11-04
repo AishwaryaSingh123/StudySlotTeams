@@ -1,0 +1,29 @@
+[
+  {
+    "id": "act-01",
+    "team_id": "team-survey-01",
+    "actor_id": "u-asha-02",
+    "task_id": "task-01",
+    "action": "task_created",
+    "detail": { "title": "Define interview methodology and consent form" },
+    "created_at": "2026-11-01T10:00:00Z"
+  },
+  {
+    "id": "act-02",
+    "team_id": "team-survey-01",
+    "actor_id": "u-asha-02",
+    "task_id": "task-05",
+    "action": "task_completed",
+    "detail": { "points": 4, "title": "Compile literature review on campus mobility" },
+    "created_at": "2026-11-03T16:00:00Z"
+  },
+  {
+    "id": "act-03",
+    "team_id": "team-survey-01",
+    "actor_id": "u-ravi-03",
+    "task_id": "task-06",
+    "action": "task_completed",
+    "detail": { "points": 3, "title": "Audit physical wheelchair ramps in Library" },
+    "created_at": "2026-11-04T11:30:00Z"
+  }
+]

@@ -1,0 +1,68 @@
+[
+  {
+    "id": "r-lib-101",
+    "name": "Room 1.01",
+    "building": "Library",
+    "floor": 1,
+    "capacity": 4,
+    "opens_at": "08:00:00",
+    "closes_at": "22:00:00",
+    "status": "active",
+    "equipment": ["whiteboard", "power_sockets"]
+  },
+  {
+    "id": "r-lib-204",
+    "name": "Room 2.04",
+    "building": "Library",
+    "floor": 2,
+    "capacity": 8,
+    "opens_at": "08:00:00",
+    "closes_at": "22:00:00",
+    "status": "active",
+    "equipment": ["whiteboard", "display_screen", "video_conferencing", "accessible_entrance"]
+  },
+  {
+    "id": "r-lib-302",
+    "name": "Room 3.02",
+    "building": "Library",
+    "floor": 3,
+    "capacity": 6,
+    "opens_at": "08:00:00",
+    "closes_at": "22:00:00",
+    "status": "active",
+    "equipment": ["display_screen", "power_sockets", "whiteboard"]
+  },
+  {
+    "id": "r-sci-101",
+    "name": "Seminar Lab 101",
+    "building": "Science Block",
+    "floor": 1,
+    "capacity": 12,
+    "opens_at": "09:00:00",
+    "closes_at": "20:00:00",
+    "status": "active",
+    "equipment": ["power_sockets", "display_screen", "video_conferencing", "accessible_entrance"]
+  },
+  {
+    "id": "r-eng-201",
+    "name": "Project Studio A",
+    "building": "Engineering Wing",
+    "floor": 2,
+    "capacity": 10,
+    "opens_at": "08:30:00",
+    "closes_at": "21:30:00",
+    "status": "active",
+    "equipment": ["whiteboard", "video_conferencing", "accessible_entrance", "power_sockets"]
+  },
+  {
+    "id": "r-eng-104",
+    "name": "Study Pod 4",
+    "building": "Engineering Wing",
+    "floor": 1,
+    "capacity": 4,
+    "opens_at": "08:00:00",
+    "closes_at": "22:00:00",
+    "status": "active",
+    "equipment": ["power_sockets", "whiteboard"]
+  }
+]

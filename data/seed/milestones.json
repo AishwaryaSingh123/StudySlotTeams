@@ -1,0 +1,32 @@
+[
+  {
+    "id": "ms-01",
+    "team_id": "team-survey-01",
+    "name": "Methodology & Literature Synthesis",
+    "description": "Baseline theoretical foundation and ethics approval complete.",
+    "due_date": "2026-11-06",
+    "status": "completed",
+    "completed_at": "2026-11-04T12:00:00Z",
+    "task_ids": ["task-01", "task-05"]
+  },
+  {
+    "id": "ms-02",
+    "team_id": "team-survey-01",
+    "name": "Survey Deployment & Field Audit",
+    "description": "Launch online instrument and complete physical accessibility spot-checks.",
+    "due_date": "2026-11-16",
+    "status": "open",
+    "completed_at": null,
+    "task_ids": ["task-02", "task-03", "task-04", "task-06"]
+  },
+  {
+    "id": "ms-03",
+    "team_id": "team-survey-01",
+    "name": "Midway Departmental Review",
+    "description": "Presentation of preliminary results and data integrity verification.",
+    "due_date": "2026-11-22",
+    "status": "open",
+    "completed_at": null,
+    "task_ids": ["task-07", "task-08"]
+  }
+]

@@ -1,0 +1,45 @@
+[
+  {
+    "id": "b-team-session-01",
+    "room_id": "r-lib-204",
+    "booked_by": "u-asha-02",
+    "team_id": "team-survey-01",
+    "starts_at": "2026-11-12T08:30:00Z",
+    "ends_at": "2026-11-12T09:30:00Z",
+    "purpose": "Survey question drafting and pilot planning",
+    "status": "confirmed",
+    "created_at": "2026-11-03T10:00:00Z",
+    "cancelled_at": null,
+    "session_note": "Bring printed copies of draft questions and ethics checklists.",
+    "task_ids": ["task-02", "task-03"],
+    "attendee_ids": ["u-asha-02", "u-ravi-03"]
+  },
+  {
+    "id": "b-personal-02",
+    "room_id": "r-lib-101",
+    "booked_by": "u-meera-04",
+    "team_id": null,
+    "starts_at": "2026-11-10T04:30:00Z",
+    "ends_at": "2026-11-10T05:30:00Z",
+    "purpose": "Individual thesis literature study",
+    "status": "confirmed",
+    "created_at": "2026-11-04T08:00:00Z",
+    "cancelled_at": null,
+    "task_ids": [],
+    "attendee_ids": []
+  },
+  {
+    "id": "b-past-03",
+    "room_id": "r-lib-302",
+    "booked_by": "u-asha-02",
+    "team_id": "team-survey-01",
+    "starts_at": "2026-11-03T04:30:00Z",
+    "ends_at": "2026-11-03T06:00:00Z",
+    "purpose": "Initial project kickoff and literature scope",
+    "status": "confirmed",
+    "created_at": "2026-11-01T09:00:00Z",
+    "cancelled_at": null,
+    "task_ids": ["task-05"],
+    "attendee_ids": ["u-asha-02", "u-ravi-03"]
+  }
+]

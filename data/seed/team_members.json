@@ -1,0 +1,14 @@
+[
+  {
+    "team_id": "team-survey-01",
+    "user_id": "u-asha-02",
+    "role": "lead",
+    "joined_at": "2026-11-01T09:00:00Z"
+  },
+  {
+    "team_id": "team-survey-01",
+    "user_id": "u-ravi-03",
+    "role": "member",
+    "joined_at": "2026-11-02T10:15:00Z"
+  }
+]

@@ -1,0 +1,30 @@
+[
+  {
+    "id": "u-staff-01",
+    "full_name": "Priya Sharma (Staff Admin)",
+    "email": "staff.demo@example.test",
+    "role": "staff_admin",
+    "created_at": "2026-11-01T08:00:00Z"
+  },
+  {
+    "id": "u-asha-02",
+    "full_name": "Asha Patel (Team Lead)",
+    "email": "asha.demo@example.test",
+    "role": "student",
+    "created_at": "2026-11-01T08:00:00Z"
+  },
+  {
+    "id": "u-ravi-03",
+    "full_name": "Ravi Kumar",
+    "email": "ravi.demo@example.test",
+    "role": "student",
+    "created_at": "2026-11-01T08:00:00Z"
+  },
+  {
+    "id": "u-meera-04",
+    "full_name": "Meera Iyer",
+    "email": "meera.demo@example.test",
+    "role": "student",
+    "created_at": "2026-11-01T08:00:00Z"
+  }
+]

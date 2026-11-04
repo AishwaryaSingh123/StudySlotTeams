@@ -1,0 +1,6 @@
+{
+  "id": 1,
+  "max_hours_per_day": 2,
+  "max_booking_hours": 2,
+  "slot_minutes": 30
+}

@@ -1,0 +1,16 @@
+[
+  {
+    "id": "blk-01",
+    "room_id": null,
+    "start_date": "2026-11-17",
+    "end_date": "2026-11-17",
+    "reason": "Campus-wide electrical system maintenance"
+  },
+  {
+    "id": "blk-02",
+    "room_id": "r-lib-204",
+    "start_date": "2026-11-25",
+    "end_date": "2026-11-26",
+    "reason": "Library 2nd floor carpet replacement"
+  }
+]

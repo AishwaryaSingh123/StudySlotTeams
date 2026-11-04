@@ -1,0 +1,13 @@
+/* StudySlot Teams — Responsive Nav Rules */
+
+@media (max-width: 800px) {
+  .desktop-nav {
+    display: none !important;
+  }
+  .mobile-menu-btn {
+    display: inline-flex !important;
+  }
+  .sign-out-text {
+    display: none;
+  }
+}
