@@ -84,99 +84,118 @@ alter table public.session_attendees enable row level security;
 alter table public.activity_log enable row level security;
 
 -- PROFILES POLICIES
+drop policy if exists "Profiles visible to authenticated users" on public.profiles;
 create policy "Profiles visible to authenticated users"
   on public.profiles for select
   to authenticated
   using (true);
 
+drop policy if exists "Users can update own profile name/avatar" on public.profiles;
 create policy "Users can update own profile name/avatar"
   on public.profiles for update
   to authenticated
   using (auth.uid() = id);
 
 -- ROOMS & RULES POLICIES
+drop policy if exists "Rooms visible to authenticated users" on public.rooms;
 create policy "Rooms visible to authenticated users"
   on public.rooms for select
   to authenticated
   using (true);
 
+drop policy if exists "Staff can manage rooms" on public.rooms;
 create policy "Staff can manage rooms"
   on public.rooms for all
   to authenticated
   using (public.is_staff_admin());
 
+drop policy if exists "Room equipment visible to authenticated users" on public.room_equipment;
 create policy "Room equipment visible to authenticated users"
   on public.room_equipment for select
   to authenticated
   using (true);
 
+drop policy if exists "Staff can manage room equipment" on public.room_equipment;
 create policy "Staff can manage room equipment"
   on public.room_equipment for all
   to authenticated
   using (public.is_staff_admin());
 
+drop policy if exists "Rules visible to authenticated users" on public.rules;
 create policy "Rules visible to authenticated users"
   on public.rules for select
   to authenticated
   using (true);
 
+drop policy if exists "Staff can manage rules" on public.rules;
 create policy "Staff can manage rules"
   on public.rules for all
   to authenticated
   using (public.is_staff_admin());
 
+drop policy if exists "Blackouts visible to authenticated users" on public.blackout_dates;
 create policy "Blackouts visible to authenticated users"
   on public.blackout_dates for select
   to authenticated
   using (true);
 
+drop policy if exists "Staff can manage blackouts" on public.blackout_dates;
 create policy "Staff can manage blackouts"
   on public.blackout_dates for all
   to authenticated
   using (public.is_staff_admin());
 
 -- TEAMS & MEMBERS POLICIES
+drop policy if exists "Team members and staff can view teams" on public.teams;
 create policy "Team members and staff can view teams"
   on public.teams for select
   to authenticated
   using (public.is_team_member(id) or public.is_staff_admin());
 
+drop policy if exists "Authenticated users can create teams" on public.teams;
 create policy "Authenticated users can create teams"
   on public.teams for insert
   to authenticated
   with check (auth.uid() = created_by);
 
+drop policy if exists "Team members and staff can view team memberships" on public.team_members;
 create policy "Team members and staff can view team memberships"
   on public.team_members for select
   to authenticated
   using (public.is_team_member(team_id) or public.is_staff_admin());
 
+drop policy if exists "Users can join teams" on public.team_members;
 create policy "Users can join teams"
   on public.team_members for insert
   to authenticated
   with check (auth.uid() = user_id or public.is_team_lead(team_id));
 
 -- TASKS & MILESTONES POLICIES
+drop policy if exists "Team members can view tasks" on public.tasks;
 create policy "Team members can view tasks"
   on public.tasks for select
   to authenticated
   using (public.is_team_member(team_id));
 
+drop policy if exists "Team members can create and modify tasks" on public.tasks;
 create policy "Team members can create and modify tasks"
   on public.tasks for all
   to authenticated
   using (public.is_team_member(team_id));
 
+drop policy if exists "Team members can view milestones" on public.milestones;
 create policy "Team members can view milestones"
   on public.milestones for select
   to authenticated
   using (public.is_team_member(team_id));
 
+drop policy if exists "Team lead can manage milestones" on public.milestones;
 create policy "Team lead can manage milestones"
   on public.milestones for all
   to authenticated
   using (public.is_team_lead(team_id));
 
+drop policy if exists "Team members can view milestone tasks" on public.milestone_tasks;
 create policy "Team members can view milestone tasks"
   on public.milestone_tasks for select
   to authenticated
@@ -187,6 +206,7 @@ create policy "Team members can view milestone tasks"
     )
   );
 
+drop policy if exists "Team lead can manage milestone tasks" on public.milestone_tasks;
 create policy "Team lead can manage milestone tasks"
   on public.milestone_tasks for all
   to authenticated
@@ -198,12 +218,13 @@ create policy "Team lead can manage milestone tasks"
   );
 
 -- BOOKINGS POLICIES
--- Anyone authenticated can view booking times to know availability, but not private team contents
+drop policy if exists "Authenticated users can view bookings" on public.bookings;
 create policy "Authenticated users can view bookings"
   on public.bookings for select
   to authenticated
   using (true);
 
+drop policy if exists "Authenticated users can create personal or team bookings" on public.bookings;
 create policy "Authenticated users can create personal or team bookings"
   on public.bookings for insert
   to authenticated
@@ -212,11 +233,13 @@ create policy "Authenticated users can create personal or team bookings"
     and (team_id is null or public.is_team_member(team_id))
   );
 
+drop policy if exists "Booking creator or staff can cancel booking" on public.bookings;
 create policy "Booking creator or staff can cancel booking"
   on public.bookings for update
   to authenticated
   using (auth.uid() = created_by or public.is_staff_admin());
 
+drop policy if exists "Team members can view session tasks" on public.session_tasks;
 create policy "Team members can view session tasks"
   on public.session_tasks for select
   to authenticated
@@ -227,6 +250,7 @@ create policy "Team members can view session tasks"
     )
   );
 
+drop policy if exists "Team members can view session attendees" on public.session_attendees;
 create policy "Team members can view session attendees"
   on public.session_attendees for select
   to authenticated
@@ -237,11 +261,13 @@ create policy "Team members can view session attendees"
     )
   );
 
+drop policy if exists "Team members can view activity log" on public.activity_log;
 create policy "Team members can view activity log"
   on public.activity_log for select
   to authenticated
   using (public.is_team_member(team_id));
 
+drop policy if exists "Team members can append activity log" on public.activity_log;
 create policy "Team members can append activity log"
   on public.activity_log for insert
   to authenticated
