@@ -29,3 +29,6 @@
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+design.md 
+plan.md

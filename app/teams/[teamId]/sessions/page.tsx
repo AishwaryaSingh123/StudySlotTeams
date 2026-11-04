@@ -10,20 +10,21 @@ export const metadata = {
 export default async function TeamSessionsPage({
   params,
 }: {
-  params: { teamId: string };
+  params: Promise<{ teamId: string }> | { teamId: string };
 }) {
   const user = await getSessionUser();
   if (!user) {
     redirect('/login');
   }
 
+  const p = await params;
   const teamRepo = getTeamRepo();
-  const team = await teamRepo.getTeam(params.teamId);
+  const team = await teamRepo.getTeam(p.teamId);
   if (!team) {
     notFound();
   }
 
-  const members = await teamRepo.listMembers(params.teamId);
+  const members = await teamRepo.listMembers(p.teamId);
   const currentMember = members.find((m) => m.user_id === user.id);
   if (!currentMember) {
     redirect('/teams');
@@ -31,7 +32,7 @@ export default async function TeamSessionsPage({
 
   const isLead = currentMember.role === 'lead';
 
-  const sessionsRes = await teamRepo.listTeamSessions(params.teamId);
+  const sessionsRes = await teamRepo.listTeamSessions(p.teamId);
   const sessions = sessionsRes.ok ? sessionsRes.data : [];
 
   async function handleCancel(bookingId: string) {
@@ -40,7 +41,7 @@ export default async function TeamSessionsPage({
     if (!currentUser) return { ok: false, error: 'Unauthenticated.' };
 
     const tRepo = getTeamRepo();
-    const res = await tRepo.cancelTeamSession(currentUser.id, params.teamId, bookingId);
+    const res = await tRepo.cancelTeamSession(currentUser.id, p.teamId, bookingId);
     if (res.ok) {
       return { ok: true };
     }

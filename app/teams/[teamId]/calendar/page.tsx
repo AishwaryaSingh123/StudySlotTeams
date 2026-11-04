@@ -10,20 +10,21 @@ export const metadata = {
 export default async function TeamCalendarPage({
   params,
 }: {
-  params: { teamId: string };
+  params: Promise<{ teamId: string }> | { teamId: string };
 }) {
   const user = await getSessionUser();
   if (!user) {
     redirect('/login');
   }
 
+  const p = await params;
   const teamRepo = getTeamRepo();
-  const team = await teamRepo.getTeam(params.teamId);
+  const team = await teamRepo.getTeam(p.teamId);
   if (!team) {
     notFound();
   }
 
-  const members = await teamRepo.listMembers(params.teamId);
+  const members = await teamRepo.listMembers(p.teamId);
   const currentMember = members.find((m) => m.user_id === user.id);
   if (!currentMember) {
     redirect('/teams');
@@ -33,7 +34,7 @@ export default async function TeamCalendarPage({
 
   // Broad range for calendar queries around November 2026
   const milestoneRepo = getMilestoneRepo();
-  const calRes = await milestoneRepo.getCalendarEntries(params.teamId, '2026-11-01', '2026-11-30');
+  const calRes = await milestoneRepo.getCalendarEntries(p.teamId, '2026-11-01', '2026-11-30');
   const entries = calRes.ok ? calRes.data : [];
 
   return (

@@ -13,16 +13,19 @@ export default async function BookRoomPage({
   params,
   searchParams,
 }: {
-  params: { roomId: string };
-  searchParams: { date?: string; startTime?: string; endTime?: string };
+  params: Promise<{ roomId: string }> | { roomId: string };
+  searchParams: Promise<{ date?: string; startTime?: string; endTime?: string }> | { date?: string; startTime?: string; endTime?: string };
 }) {
   const user = await getSessionUser();
   if (!user) {
     redirect('/login');
   }
 
+  const p = await params;
+  const sp = await searchParams;
+
   const roomRepo = getRoomRepo();
-  const room = await roomRepo.getRoom(params.roomId);
+  const room = await roomRepo.getRoom(p.roomId);
   if (!room) {
     notFound();
   }
@@ -33,9 +36,9 @@ export default async function BookRoomPage({
   const teamRepo = getTeamRepo();
   const userTeams = await teamRepo.listTeamsForUser(user.id);
 
-  const targetDate = searchParams.date || '2026-11-12';
-  const startTime = searchParams.startTime || '14:00';
-  const endTime = searchParams.endTime || '15:00';
+  const targetDate = sp?.date || '2026-11-12';
+  const startTime = sp?.startTime || '14:00';
+  const endTime = sp?.endTime || '15:00';
 
   const bookingRepo = getBookingRepo();
   const myBookingsRes = await bookingRepo.listMyBookings(user.id);

@@ -10,20 +10,21 @@ export const metadata = {
 export default async function TeamContributionsPage({
   params,
 }: {
-  params: { teamId: string };
+  params: Promise<{ teamId: string }> | { teamId: string };
 }) {
   const user = await getSessionUser();
   if (!user) {
     redirect('/login');
   }
 
+  const p = await params;
   const teamRepo = getTeamRepo();
-  const team = await teamRepo.getTeam(params.teamId);
+  const team = await teamRepo.getTeam(p.teamId);
   if (!team) {
     notFound();
   }
 
-  const members = await teamRepo.listMembers(params.teamId);
+  const members = await teamRepo.listMembers(p.teamId);
   const currentMember = members.find((m) => m.user_id === user.id);
   if (!currentMember) {
     redirect('/teams');
@@ -34,10 +35,10 @@ export default async function TeamContributionsPage({
   const reportRepo = getReportRepo();
   const taskRepo = getTaskRepo();
 
-  const summaryRes = await reportRepo.getWorkloadSummary(params.teamId, 'all');
+  const summaryRes = await reportRepo.getWorkloadSummary(p.teamId, 'all');
   const summaries = summaryRes.ok ? summaryRes.data : [];
 
-  const activityRes = await taskRepo.listActivityLog(params.teamId, 'all');
+  const activityRes = await taskRepo.listActivityLog(p.teamId, 'all');
   const activities = activityRes.ok ? activityRes.data : [];
 
   async function handleFetch(
@@ -52,8 +53,8 @@ export default async function TeamContributionsPage({
     const rRepo = getReportRepo();
     const tRepo = getTaskRepo();
 
-    const sRes = await rRepo.getWorkloadSummary(params.teamId, period, start, end);
-    const aRes = await tRepo.listActivityLog(params.teamId, period, start, end);
+    const sRes = await rRepo.getWorkloadSummary(p.teamId, period, start, end);
+    const aRes = await tRepo.listActivityLog(p.teamId, period, start, end);
 
     return {
       ok: true,
@@ -73,7 +74,7 @@ export default async function TeamContributionsPage({
     if (!currentUser) return { ok: false, error: 'Unauthenticated.' };
 
     const rRepo = getReportRepo();
-    const res = await rRepo.exportContributionReport(params.teamId, period, format, start, end);
+    const res = await rRepo.exportContributionReport(p.teamId, period, format, start, end);
     if (!res.ok) {
       return { ok: false, error: res.error.message };
     }

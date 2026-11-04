@@ -276,7 +276,7 @@ export function RoomForm({ initialRoom, onSave }: RoomFormProps) {
             <Button type="submit" variant="primary" loading={loading} loadingText="Saving room…">
               {initialRoom ? 'Save changes' : 'Add room'}
             </Button>
-            <Link href="/staff/rooms" passHref legacyBehavior>
+            <Link href="/staff/rooms" style={{ textDecoration: 'none' }}>
               <Button variant="secondary">Cancel</Button>
             </Link>
           </div>

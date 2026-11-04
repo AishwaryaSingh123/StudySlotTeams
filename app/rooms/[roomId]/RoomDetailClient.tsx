@@ -74,8 +74,7 @@ export function RoomDetailClient({
 
         <Link
           href={`/rooms/${room.id}/book?date=${selectedDate}`}
-          passHref
-          legacyBehavior
+          style={{ textDecoration: 'none' }}
         >
           <Button
             variant="primary"

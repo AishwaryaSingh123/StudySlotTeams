@@ -187,7 +187,7 @@ export function NewTeamSessionClient({
           </p>
 
           <div style={{ display: 'flex', gap: '16px', marginTop: '24px' }}>
-            <Link href={`/teams/${team.id}/sessions`} passHref legacyBehavior>
+            <Link href={`/teams/${team.id}/sessions`} style={{ textDecoration: 'none' }}>
               <Button variant="primary">View team sessions</Button>
             </Link>
           </div>
@@ -517,7 +517,7 @@ export function NewTeamSessionClient({
           <Button type="submit" variant="primary" loading={loading} loadingText="Booking session…">
             Book session
           </Button>
-          <Link href={`/teams/${team.id}/sessions`} passHref legacyBehavior>
+          <Link href={`/teams/${team.id}/sessions`} style={{ textDecoration: 'none' }}>
             <Button variant="secondary">Cancel</Button>
           </Link>
         </div>

@@ -201,8 +201,7 @@ export function RoomSearchClient({
       render: (r) => (
         <Link
           href={`/rooms/${r.id}?date=${date}&startTime=${startTime}&endTime=${endTime}`}
-          passHref
-          legacyBehavior
+          style={{ textDecoration: 'none' }}
         >
           <Button variant={r.availability === 'free' ? 'primary' : 'secondary'}>
             View and book

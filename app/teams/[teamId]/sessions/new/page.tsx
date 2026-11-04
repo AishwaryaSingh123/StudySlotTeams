@@ -11,32 +11,35 @@ export default async function NewTeamSessionPage({
   params,
   searchParams,
 }: {
-  params: { teamId: string };
-  searchParams: { roomId?: string; date?: string };
+  params: Promise<{ teamId: string }> | { teamId: string };
+  searchParams: Promise<{ roomId?: string; date?: string }> | { roomId?: string; date?: string };
 }) {
   const user = await getSessionUser();
   if (!user) {
     redirect('/login');
   }
 
+  const p = await params;
+  const sp = await searchParams;
+
   const teamRepo = getTeamRepo();
-  const team = await teamRepo.getTeam(params.teamId);
+  const team = await teamRepo.getTeam(p.teamId);
   if (!team) {
     notFound();
   }
 
-  const members = await teamRepo.listMembers(params.teamId);
+  const members = await teamRepo.listMembers(p.teamId);
   const currentMember = members.find((m) => m.user_id === user.id);
   if (!currentMember || currentMember.role !== 'lead') {
     // Only lead can book team session
-    redirect(`/teams/${params.teamId}/sessions`);
+    redirect(`/teams/${p.teamId}/sessions`);
   }
 
   const roomRepo = getRoomRepo();
   const rooms = await roomRepo.listRooms(false);
 
   const taskRepo = getTaskRepo();
-  const tasksRes = await taskRepo.listTasks(params.teamId);
+  const tasksRes = await taskRepo.listTasks(p.teamId);
   // Only non-done tasks can be agenda tasks
   const openTasks = tasksRes.ok ? tasksRes.data.filter((t) => t.status !== 'done') : [];
 
@@ -76,8 +79,8 @@ export default async function NewTeamSessionPage({
       tasks={openTasks}
       members={members}
       rules={rules}
-      initialDate={searchParams.date || '2026-11-12'}
-      initialRoomId={searchParams.roomId}
+      initialDate={sp?.date || '2026-11-12'}
+      initialRoomId={sp?.roomId}
       onBookSession={handleBookSession}
     />
   );

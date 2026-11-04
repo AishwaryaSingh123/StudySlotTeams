@@ -26,7 +26,7 @@ export function PermissionDenied({ message = 'This page is for Staff Admins.' }:
         {message}
       </p>
 
-      <Link href="/rooms" passHref legacyBehavior>
+      <Link href="/rooms" style={{ textDecoration: 'none' }}>
         <Button variant="primary">Return to room search</Button>
       </Link>
     </div>

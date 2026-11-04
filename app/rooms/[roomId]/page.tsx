@@ -4,9 +4,14 @@ import { getRoomRepo, getRulesRepo, getBookingRepo } from '../../../lib/repo';
 import { RoomDetailClient } from './RoomDetailClient';
 import { calculateDailyBookedHours } from '../../../lib/rules/booking';
 
-export async function generateMetadata({ params }: { params: { roomId: string } }) {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ roomId: string }> | { roomId: string };
+}) {
+  const p = await params;
   const roomRepo = getRoomRepo();
-  const room = await roomRepo.getRoom(params.roomId);
+  const room = await roomRepo.getRoom(p.roomId);
   return {
     title: room ? `${room.name} — StudySlot Teams` : 'Room Detail — StudySlot Teams',
   };
@@ -16,16 +21,19 @@ export default async function RoomDetailPage({
   params,
   searchParams,
 }: {
-  params: { roomId: string };
-  searchParams: { date?: string };
+  params: Promise<{ roomId: string }> | { roomId: string };
+  searchParams: Promise<{ date?: string }> | { date?: string };
 }) {
   const user = await getSessionUser();
   if (!user) {
     redirect('/login');
   }
 
+  const p = await params;
+  const sp = await searchParams;
+
   const roomRepo = getRoomRepo();
-  const room = await roomRepo.getRoom(params.roomId);
+  const room = await roomRepo.getRoom(p.roomId);
   if (!room) {
     notFound();
   }
@@ -33,7 +41,7 @@ export default async function RoomDetailPage({
   const rulesRepo = getRulesRepo();
   const rules = await rulesRepo.getRules();
 
-  const targetDate = searchParams.date || '2026-11-12';
+  const targetDate = sp?.date || '2026-11-12';
 
   const availRes = await roomRepo.getRoomAvailability(user.id, room.id, targetDate);
   const slots = availRes.ok ? availRes.data.slots : [];

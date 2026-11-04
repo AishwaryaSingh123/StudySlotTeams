@@ -176,7 +176,7 @@ export function TeamsClient({ initialTeams, onCreateTeam, onJoinTeam }: TeamsCli
                   </div>
 
                   <div style={{ marginTop: '8px' }}>
-                    <Link href={`/teams/${t.id}`} passHref legacyBehavior>
+                    <Link href={`/teams/${t.id}`} style={{ textDecoration: 'none' }}>
                       <Button variant="secondary" style={{ width: '100%', justifyContent: 'space-between' }}>
                         <span>Open team workspace</span>
                         <ArrowRight size={16} aria-hidden="true" />

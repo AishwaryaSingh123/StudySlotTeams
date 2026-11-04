@@ -89,7 +89,7 @@ export function TeamOverviewClient({
               <h2 id="overview-session-heading" style={{ margin: 0, fontSize: '1.25rem' }}>Next Session</h2>
             </div>
             {isLead && (
-              <Link href={`/teams/${team.id}/sessions/new`} passHref legacyBehavior>
+              <Link href={`/teams/${team.id}/sessions/new`} style={{ textDecoration: 'none' }}>
                 <Button variant="secondary" style={{ minHeight: '36px', padding: '6px 14px' }}>
                   Book a session
                 </Button>

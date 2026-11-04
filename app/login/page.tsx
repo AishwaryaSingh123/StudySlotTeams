@@ -29,7 +29,7 @@ async function handleSignIn(formData: FormData) {
     const user = await authRepo.getUserByEmail(email);
 
     if (!user) {
-      return { error: 'Account not found. Use one of the seeded demo accounts below.' };
+      return { error: 'Invalid email or password.' };
     }
 
     await setSessionUser(user.id);
@@ -66,24 +66,6 @@ async function handleSignIn(formData: FormData) {
   }
 }
 
-async function handleQuickSignIn(userId: string): Promise<void> {
-  'use server';
-
-  const authRepo = getAuthRepo();
-  const user = await authRepo.getUserById(userId);
-  if (!user) {
-    return;
-  }
-
-  await setSessionUser(user.id);
-
-  if (user.role === 'staff_admin') {
-    redirect('/staff/rooms');
-  } else {
-    redirect('/rooms');
-  }
-}
-
 export default async function LoginPage() {
   const currentUser = await getSessionUser();
   if (currentUser) {
@@ -92,9 +74,6 @@ export default async function LoginPage() {
     }
     redirect('/rooms');
   }
-
-  const authRepo = getAuthRepo();
-  const demoUsers = await authRepo.listUsers();
 
   return (
     <div
@@ -140,72 +119,6 @@ export default async function LoginPage() {
         </p>
 
         <LoginForm onSignIn={handleSignIn} />
-
-        <div
-          style={{
-            marginTop: '32px',
-            padding: '16px',
-            backgroundColor: 'var(--color-sand)',
-            borderRadius: 'var(--radius-sm)',
-            border: '1px solid var(--color-rule)',
-          }}
-        >
-          <h2
-            style={{
-              fontSize: '1rem',
-              fontWeight: 700,
-              fontFamily: 'var(--font-sans)',
-              marginBottom: '8px',
-              color: 'var(--color-ink)',
-            }}
-          >
-            Seeded Demo Accounts
-          </h2>
-          <p style={{ fontSize: '0.9rem', color: 'var(--color-slate)', marginBottom: '12px' }}>
-            Shared demo password: <code style={{ fontWeight: 700 }}>demo123</code>. Or select an account below to sign in instantly:
-          </p>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {demoUsers.map((u) => {
-              const roleLabel =
-                u.role === 'staff_admin'
-                  ? 'Staff Admin'
-                  : u.email.includes('asha')
-                  ? 'Student (Team Lead)'
-                  : u.email.includes('ravi')
-                  ? 'Student (Team Member)'
-                  : 'Student (Independent)';
-
-              return (
-                <form key={u.id} action={handleQuickSignIn.bind(null, u.id)}>
-                  <button
-                    type="submit"
-                    style={{
-                      width: '100%',
-                      padding: '8px 12px',
-                      minHeight: '44px',
-                      backgroundColor: 'var(--color-surface)',
-                      border: '1px solid var(--color-control-border)',
-                      borderRadius: 'var(--radius-sm)',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '2px',
-                    }}
-                  >
-                    <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--color-stacks-green-dark)' }}>
-                      {u.full_name}
-                    </span>
-                    <span style={{ fontSize: '0.85rem', color: 'var(--color-slate)' }}>
-                      {u.email} — {roleLabel}
-                    </span>
-                  </button>
-                </form>
-              );
-            })}
-          </div>
-        </div>
       </div>
     </div>
   );

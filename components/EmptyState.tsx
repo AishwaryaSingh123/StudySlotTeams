@@ -27,7 +27,7 @@ export function EmptyState({ message, actionText, actionHref, onAction }: EmptyS
         {message}
       </p>
       {actionText && actionHref && (
-        <Link href={actionHref} passHref legacyBehavior>
+        <Link href={actionHref} style={{ textDecoration: 'none' }}>
           <Button variant="primary">{actionText}</Button>
         </Link>
       )}

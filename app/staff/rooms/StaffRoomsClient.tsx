@@ -137,7 +137,7 @@ export function StaffRoomsClient({
       header: 'Actions',
       render: (r) => (
         <div style={{ display: 'flex', gap: '8px' }}>
-          <Link href={`/staff/rooms/${r.id}/edit`} passHref legacyBehavior>
+          <Link href={`/staff/rooms/${r.id}/edit`} style={{ textDecoration: 'none' }}>
             <Button variant="secondary" style={{ padding: '6px 12px', minHeight: '36px', fontSize: '0.9rem' }}>
               <Edit size={15} aria-hidden="true" />
               <span>Edit</span>
@@ -171,7 +171,7 @@ export function StaffRoomsClient({
           </p>
         </div>
 
-        <Link href="/staff/rooms/new" passHref legacyBehavior>
+        <Link href="/staff/rooms/new" style={{ textDecoration: 'none' }}>
           <Button variant="primary">
             <Plus size={18} aria-hidden="true" />
             <span>Add room</span>

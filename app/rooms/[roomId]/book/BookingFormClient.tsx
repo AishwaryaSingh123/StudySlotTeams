@@ -161,10 +161,10 @@ export function BookingFormClient({
           )}
 
           <div style={{ display: 'flex', gap: '16px', marginTop: '24px' }}>
-            <Link href="/bookings" passHref legacyBehavior>
+            <Link href="/bookings" style={{ textDecoration: 'none' }}>
               <Button variant="primary">View my bookings</Button>
             </Link>
-            <Link href="/rooms" passHref legacyBehavior>
+            <Link href="/rooms" style={{ textDecoration: 'none' }}>
               <Button variant="secondary">Book another room</Button>
             </Link>
           </div>
@@ -309,8 +309,7 @@ export function BookingFormClient({
                 {userTeams.length > 0 ? (
                   <Link
                     href={`/teams/${selectedTeamId}/sessions/new?roomId=${room.id}&date=${date}`}
-                    passHref
-                    legacyBehavior
+                    style={{ textDecoration: 'none' }}
                   >
                     <Button variant="primary">Go to team session booking</Button>
                   </Link>

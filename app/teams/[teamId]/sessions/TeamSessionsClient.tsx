@@ -83,7 +83,7 @@ export function TeamSessionsClient({
         </div>
 
         {isLead ? (
-          <Link href={`/teams/${team.id}/sessions/new`} passHref legacyBehavior>
+          <Link href={`/teams/${team.id}/sessions/new`} style={{ textDecoration: 'none' }}>
             <Button variant="primary">
               <Plus size={18} aria-hidden="true" />
               <span>Book a team session</span>

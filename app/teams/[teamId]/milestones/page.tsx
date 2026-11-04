@@ -11,20 +11,21 @@ export const metadata = {
 export default async function MilestonesPage({
   params,
 }: {
-  params: { teamId: string };
+  params: Promise<{ teamId: string }> | { teamId: string };
 }) {
   const user = await getSessionUser();
   if (!user) {
     redirect('/login');
   }
 
+  const p = await params;
   const teamRepo = getTeamRepo();
-  const team = await teamRepo.getTeam(params.teamId);
+  const team = await teamRepo.getTeam(p.teamId);
   if (!team) {
     notFound();
   }
 
-  const members = await teamRepo.listMembers(params.teamId);
+  const members = await teamRepo.listMembers(p.teamId);
   const currentMember = members.find((m) => m.user_id === user.id);
   if (!currentMember) {
     redirect('/teams');
@@ -33,11 +34,11 @@ export default async function MilestonesPage({
   const isLead = currentMember.role === 'lead';
 
   const milestoneRepo = getMilestoneRepo();
-  const msRes = await milestoneRepo.listMilestones(params.teamId);
+  const msRes = await milestoneRepo.listMilestones(p.teamId);
   const milestones = msRes.ok ? msRes.data : [];
 
   const taskRepo = getTaskRepo();
-  const tasksRes = await taskRepo.listTasks(params.teamId);
+  const tasksRes = await taskRepo.listTasks(p.teamId);
   const tasks = tasksRes.ok ? tasksRes.data : [];
 
   async function handleCreate(input: {

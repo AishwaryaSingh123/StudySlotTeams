@@ -3,9 +3,14 @@ import { getSessionUser } from '@/lib/auth/session';
 import { getTeamRepo, getTaskRepo, getMilestoneRepo, getBookingRepo } from '@/lib/repo';
 import { TeamOverviewClient } from './TeamOverviewClient';
 
-export async function generateMetadata({ params }: { params: { teamId: string } }) {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ teamId: string }> | { teamId: string };
+}) {
+  const p = await params;
   const teamRepo = getTeamRepo();
-  const team = await teamRepo.getTeam(params.teamId);
+  const team = await teamRepo.getTeam(p.teamId);
   return {
     title: team ? `${team.name} — StudySlot Teams` : 'Team Overview — StudySlot Teams',
   };
@@ -14,20 +19,21 @@ export async function generateMetadata({ params }: { params: { teamId: string } 
 export default async function TeamOverviewPage({
   params,
 }: {
-  params: { teamId: string };
+  params: Promise<{ teamId: string }> | { teamId: string };
 }) {
   const user = await getSessionUser();
   if (!user) {
     redirect('/login');
   }
 
+  const p = await params;
   const teamRepo = getTeamRepo();
-  const team = await teamRepo.getTeam(params.teamId);
+  const team = await teamRepo.getTeam(p.teamId);
   if (!team) {
     notFound();
   }
 
-  const members = await teamRepo.listMembers(params.teamId);
+  const members = await teamRepo.listMembers(p.teamId);
   const currentMember = members.find((m) => m.user_id === user.id);
   if (!currentMember) {
     redirect('/teams');
@@ -37,7 +43,7 @@ export default async function TeamOverviewPage({
 
   // Fetch next session
   const bookingRepo = getBookingRepo();
-  const sessionsRes = await teamRepo.listTeamSessions(params.teamId);
+  const sessionsRes = await teamRepo.listTeamSessions(p.teamId);
   const allSessions = sessionsRes.ok ? sessionsRes.data : [];
   const now = new Date();
   const nextSession = allSessions
@@ -46,12 +52,12 @@ export default async function TeamOverviewPage({
 
   // Fetch open tasks due this week
   const taskRepo = getTaskRepo();
-  const tasksRes = await taskRepo.listTasks(params.teamId, { due: 'week' });
+  const tasksRes = await taskRepo.listTasks(p.teamId, { due: 'week' });
   const dueTasks = tasksRes.ok ? tasksRes.data.filter((t) => t.status !== 'done') : [];
 
   // Fetch next milestone
   const milestoneRepo = getMilestoneRepo();
-  const msRes = await milestoneRepo.listMilestones(params.teamId);
+  const msRes = await milestoneRepo.listMilestones(p.teamId);
   const openMilestones = msRes.ok ? msRes.data.filter((m) => m.status === 'open') : [];
   const nextMilestone = openMilestones.sort((a, b) => a.due_date.localeCompare(b.due_date))[0] || null;
 
@@ -61,7 +67,7 @@ export default async function TeamOverviewPage({
     if (!currentUser) return { ok: false, error: 'Unauthenticated.' };
 
     const tRepo = getTeamRepo();
-    const res = await tRepo.removeMember(currentUser.id, params.teamId, targetUserId);
+    const res = await tRepo.removeMember(currentUser.id, p.teamId, targetUserId);
     if (res.ok) {
       return { ok: true };
     }

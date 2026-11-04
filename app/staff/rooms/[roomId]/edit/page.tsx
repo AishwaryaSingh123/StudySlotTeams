@@ -12,7 +12,7 @@ export const metadata = {
 export default async function EditRoomPage({
   params,
 }: {
-  params: { roomId: string };
+  params: Promise<{ roomId: string }> | { roomId: string };
 }) {
   const user = await getSessionUser();
   if (!user) {
@@ -23,8 +23,9 @@ export default async function EditRoomPage({
     return <PermissionDenied />;
   }
 
+  const p = await params;
   const roomRepo = getRoomRepo();
-  const room = await roomRepo.getRoom(params.roomId);
+  const room = await roomRepo.getRoom(p.roomId);
   if (!room) {
     notFound();
   }
@@ -35,7 +36,7 @@ export default async function EditRoomPage({
     if (currentUser?.role !== 'staff_admin') return { ok: false, error: 'Unauthorized.' };
 
     const rRepo = getRoomRepo();
-    const res = await rRepo.updateRoom(params.roomId, data);
+    const res = await rRepo.updateRoom(p.roomId, data);
     if (res.ok) {
       return { ok: true, room: res.data };
     }
