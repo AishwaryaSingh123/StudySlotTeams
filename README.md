@@ -125,10 +125,4 @@ npm run build
 
 ---
 
-## 7. Provisional Demonstration Mapping
 
-| Team Member | Features Assigned | Key Demonstration Workflow |
-| :--- | :--- | :--- |
-| **Member A** | **F1 & F2** | Room conflict detection timeline, next-available slot suggestion, rubber stamp confirmation, team session booking with linked agenda. |
-| **Member B** | **F3 & F4** | 4-column task board, keyboard "Move to" menu, soft delete with 8s Undo, milestone completion bars, Agenda & Week calendar views. |
-| **Member C** | **F5 & F6** | Formula injection protected CSV report, printable HTML report, room deactivation safety inspection, blackout date management. |
