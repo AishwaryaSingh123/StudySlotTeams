@@ -1,13 +1,13 @@
 # StudySlot Teams
 
-> A conflict-free academic room booking, team session coordination, task board, and transparent workload accounting application built with Next.js, TypeScript, and a distinctive **reading-room ledger** aesthetic.
+> A conflict-free academic room booking, team session coordination, task board, and transparent workload accounting application built with Next.js, TypeScript, and a distinctive **reading-room ledger** aesthetic. 
 
 ---
 
 ## 1. Project Overview & Features
 
 StudySlot Teams implements the complete university team study room reservation and project tracking workflow across 6 core functional modules:
-
+Vercel link - https://study-slot-teams.vercel.app/login
 - **F1: Room Search & Conflict-Free Booking** 
   - Search by campus date, start/end time, capacity, equipment, and building.
   - Interactive 30-minute slot timeline with half-open intervals `[start, end)`.
