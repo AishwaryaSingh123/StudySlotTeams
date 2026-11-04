@@ -1,55 +1,62 @@
 'use client';
 
 import React, { useState } from 'react';
+import { CheckCircle2 } from 'lucide-react';
 import { TextField } from '../../components/TextField';
 import { Button } from '../../components/Button';
 import { FormErrorSummary } from '../../components/FormErrorSummary';
 
 export interface LoginFormProps {
   onSignIn: (formData: FormData) => Promise<{ ok: boolean; error?: string; redirectUrl?: string }>;
-  onSignUp: (formData: FormData) => Promise<{ ok: boolean; error?: string; redirectUrl?: string }>;
+  onSignUp: (formData: FormData) => Promise<{ ok: boolean; error?: string; redirectUrl?: string; message?: string }>;
 }
 
 export function LoginForm({ onSignIn, onSignUp }: LoginFormProps) {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+
+  // Form field state for smooth pre-fill between tabs
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
+    setSuccessMessage(null);
 
-    const formData = new FormData(e.currentTarget);
-    const email = (formData.get('email') as string)?.trim() || '';
-    const password = (formData.get('password') as string)?.trim() || '';
-    const fullName = (formData.get('full_name') as string)?.trim() || '';
+    const cleanEmail = email.trim();
+    const cleanPassword = password.trim();
+    const cleanFullName = fullName.trim();
 
     // Client-side pre-validation
     if (mode === 'signup') {
-      if (!fullName || fullName.length < 2) {
+      if (!cleanFullName || cleanFullName.length < 2) {
         setError('Please enter your full name (at least 2 characters).');
         return;
       }
-      if (fullName.length > 60) {
+      if (cleanFullName.length > 60) {
         setError('Full name cannot exceed 60 characters.');
         return;
       }
     }
 
-    if (!email) {
+    if (!cleanEmail) {
       setError('Please enter a valid email address.');
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
       setError('Email format is invalid. Please enter a valid address (e.g. name@university.edu).');
       return;
     }
 
-    if (!password) {
+    if (!cleanPassword) {
       setError('Password is required.');
       return;
     }
-    if (password.length < 6) {
+    if (cleanPassword.length < 6) {
       setError('Password must be at least 6 characters long.');
       return;
     }
@@ -57,16 +64,40 @@ export function LoginForm({ onSignIn, onSignUp }: LoginFormProps) {
     setLoading(true);
 
     try {
-      const res = mode === 'signin' ? await onSignIn(formData) : await onSignUp(formData);
+      const formData = new FormData();
+      formData.set('email', cleanEmail);
+      formData.set('password', cleanPassword);
+      if (mode === 'signup') {
+        formData.set('full_name', cleanFullName);
+      }
+
+      if (mode === 'signup') {
+        const res = await onSignUp(formData);
+        if (res.ok) {
+          // Direct back to sign-in tab with clear success message and email prefilled
+          setMode('signin');
+          setPassword('');
+          setSuccessMessage('Account created successfully! Please sign in with your email and password.');
+          setError(null);
+          setLoading(false);
+          return;
+        } else {
+          setError(res.error || 'Registration failed.');
+          setLoading(false);
+          return;
+        }
+      }
+
+      // mode === 'signin'
+      const res = await onSignIn(formData);
       if (res.ok && res.redirectUrl) {
         // Direct browser navigation bypasses NEXT_REDIRECT thrown exceptions
         window.location.href = res.redirectUrl;
       } else {
-        setError(res.error || (mode === 'signin' ? 'Sign in failed.' : 'Registration failed.'));
+        setError(res.error || 'Sign in failed.');
         setLoading(false);
       }
     } catch (err: any) {
-      // In Next.js, if a redirect exception is thrown, don't show an error
       if (err?.digest?.startsWith?.('NEXT_REDIRECT') || err?.message === 'NEXT_REDIRECT') {
         return;
       }
@@ -98,6 +129,7 @@ export function LoginForm({ onSignIn, onSignUp }: LoginFormProps) {
           onClick={() => {
             setMode('signin');
             setError(null);
+            setSuccessMessage(null);
           }}
           style={{
             padding: '8px 16px',
@@ -121,6 +153,7 @@ export function LoginForm({ onSignIn, onSignUp }: LoginFormProps) {
           onClick={() => {
             setMode('signup');
             setError(null);
+            setSuccessMessage(null);
           }}
           style={{
             padding: '8px 16px',
@@ -139,6 +172,29 @@ export function LoginForm({ onSignIn, onSignUp }: LoginFormProps) {
         </button>
       </div>
 
+      {successMessage && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '12px 16px',
+            borderRadius: 'var(--radius-sm)',
+            backgroundColor: 'var(--color-success-bg)',
+            color: 'var(--color-success-text)',
+            border: '1px solid var(--color-success-text)',
+            marginBottom: '16px',
+            fontWeight: 600,
+            fontSize: '0.95rem',
+          }}
+        >
+          <CheckCircle2 size={18} aria-hidden="true" />
+          <span>{successMessage}</span>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} noValidate>
         {error && <FormErrorSummary errors={[{ message: error }]} />}
 
@@ -155,6 +211,8 @@ export function LoginForm({ onSignIn, onSignUp }: LoginFormProps) {
             required
             autoComplete="name"
             placeholder="e.g. Ananya Sen"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
           />
         )}
 
@@ -166,6 +224,8 @@ export function LoginForm({ onSignIn, onSignUp }: LoginFormProps) {
           required
           autoComplete="email"
           placeholder="e.g. your.name@university.edu"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
         />
 
         <TextField
@@ -176,6 +236,8 @@ export function LoginForm({ onSignIn, onSignUp }: LoginFormProps) {
           required
           autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
           placeholder="••••••••"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
         />
 
         <Button

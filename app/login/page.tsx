@@ -72,7 +72,7 @@ async function handleSignIn(formData: FormData): Promise<{ ok: boolean; error?: 
   }
 }
 
-async function handleSignUp(formData: FormData): Promise<{ ok: boolean; error?: string; redirectUrl?: string }> {
+async function handleSignUp(formData: FormData): Promise<{ ok: boolean; error?: string; redirectUrl?: string; message?: string }> {
   'use server';
 
   try {
@@ -100,8 +100,7 @@ async function handleSignUp(formData: FormData): Promise<{ ok: boolean; error?: 
           return { ok: false, error: res.error.message };
         }
 
-        await setSessionUser(res.data.id);
-        return { ok: true, redirectUrl: '/rooms' };
+        return { ok: true, message: 'Account created successfully.' };
       } else {
         return { ok: false, error: 'Sign up is not configured in this mode.' };
       }
@@ -135,8 +134,7 @@ async function handleSignUp(formData: FormData): Promise<{ ok: boolean; error?: 
           await authRepo.signUp({ fullName, email, userId: data.user.id });
         }
 
-        await setSessionUser(data.user.id);
-        return { ok: true, redirectUrl: '/rooms' };
+        return { ok: true, message: 'Account created successfully.' };
       } catch (err: any) {
         return { ok: false, error: err.message || 'Registration service error.' };
       }
