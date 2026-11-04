@@ -129,7 +129,7 @@ export function Header({ user }: HeaderProps) {
               </button>
             </form>
           </div>
-        ) : (
+        ) : pathname !== '/login' ? (
           <Link
             href="/login"
             style={{
@@ -146,7 +146,7 @@ export function Header({ user }: HeaderProps) {
           >
             Sign in
           </Link>
-        )}
+        ) : null}
 
         {/* Mobile Disclosure Trigger */}
         {user && (
