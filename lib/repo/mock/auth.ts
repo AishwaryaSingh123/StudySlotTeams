@@ -48,7 +48,7 @@ export class MockAuthRepo implements IAuthRepo {
     });
   }
 
-  async signUp(input: { fullName: string; email: string }): Promise<Result<Profile>> {
+  async signUp(input: { fullName: string; email: string; password?: string }): Promise<Result<Profile>> {
     return withLock((db) => {
       const cleanEmail = input.email.trim().toLowerCase();
       const cleanName = input.fullName.trim();
@@ -70,6 +70,10 @@ export class MockAuthRepo implements IAuthRepo {
       };
 
       db.profiles.push(newProfile);
+      if (input.password) {
+        db.passwords = db.passwords || {};
+        db.passwords[newProfile.id] = input.password;
+      }
       return { ok: true, data: { ...newProfile } };
     });
   }

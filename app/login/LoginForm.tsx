@@ -70,7 +70,7 @@ export function LoginForm({ onSignIn, onSignUp }: LoginFormProps) {
       if (err?.digest?.startsWith?.('NEXT_REDIRECT') || err?.message === 'NEXT_REDIRECT') {
         return;
       }
-      setError('An unexpected network error occurred. Please check your connection and try again.');
+      setError(err?.message || 'An unexpected network error occurred. Please check your connection and try again.');
       setLoading(false);
     }
   };

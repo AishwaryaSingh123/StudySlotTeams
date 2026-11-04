@@ -2,6 +2,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import {
   Profile,
   Room,
@@ -17,6 +18,7 @@ import {
 
 export interface MockDatabase {
   profiles: Profile[];
+  passwords?: Record<string, string>;
   rooms: Room[];
   rules: Rules;
   blackouts: BlackoutDate[];
@@ -28,21 +30,35 @@ export interface MockDatabase {
   activity_log: ActivityLogItem[];
 }
 
-const RUNTIME_DIR = path.join(process.cwd(), 'data', '.runtime');
+// In serverless environments like Vercel, process.cwd() is read-only.
+// os.tmpdir() (/tmp) provides writable storage.
+const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+const RUNTIME_DIR = isServerless
+  ? path.join(os.tmpdir(), 'studyslot-runtime')
+  : path.join(process.cwd(), 'data', '.runtime');
 const DB_FILE = path.join(RUNTIME_DIR, 'db.json');
 const SEED_DIR = path.join(process.cwd(), 'data', 'seed');
+
+// In-process memory singleton so mutations persist in memory even if disk write fails
+let inMemoryDb: MockDatabase | null = null;
 
 // In-process mutex queue for safe serial mutations
 let lockPromise = Promise.resolve();
 
 function readSeedFile<T>(filename: string): T {
   const filePath = path.join(SEED_DIR, filename);
-  return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  try {
+    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  } catch (err) {
+    console.error(`Error reading seed file ${filename}:`, err);
+    return [] as unknown as T;
+  }
 }
 
 export function loadInitialData(): MockDatabase {
   return {
     profiles: readSeedFile<Profile[]>('profiles.json'),
+    passwords: {},
     rooms: readSeedFile<Room[]>('rooms.json'),
     rules: readSeedFile<Rules>('rules.json'),
     blackouts: readSeedFile<BlackoutDate[]>('blackouts.json'),
@@ -56,22 +72,31 @@ export function loadInitialData(): MockDatabase {
 }
 
 export async function getDb(): Promise<MockDatabase> {
-  if (!fs.existsSync(DB_FILE)) {
-    if (!fs.existsSync(RUNTIME_DIR)) {
-      fs.mkdirSync(RUNTIME_DIR, { recursive: true });
-    }
-    const initial = loadInitialData();
-    fs.writeFileSync(DB_FILE, JSON.stringify(initial, null, 2), 'utf8');
-    return initial;
+  if (inMemoryDb) {
+    return inMemoryDb;
   }
 
   try {
-    const raw = fs.readFileSync(DB_FILE, 'utf8');
-    return JSON.parse(raw);
+    if (fs.existsSync(DB_FILE)) {
+      const raw = fs.readFileSync(DB_FILE, 'utf8');
+      inMemoryDb = JSON.parse(raw);
+      return inMemoryDb!;
+    }
   } catch (err) {
-    console.error('Failed to read runtime db.json, falling back to seed:', err);
-    return loadInitialData();
+    console.warn('Could not read runtime DB from disk, initializing from seed:', err);
   }
+
+  inMemoryDb = loadInitialData();
+  try {
+    if (!fs.existsSync(RUNTIME_DIR)) {
+      fs.mkdirSync(RUNTIME_DIR, { recursive: true });
+    }
+    fs.writeFileSync(DB_FILE, JSON.stringify(inMemoryDb, null, 2), 'utf8');
+  } catch (err) {
+    console.warn('Warning: Could not write initial DB file, continuing in-memory:', err);
+  }
+
+  return inMemoryDb;
 }
 
 /**
@@ -82,8 +107,14 @@ export async function withLock<T>(fn: (db: MockDatabase) => Promise<T> | T): Pro
     const db = await getDb();
     const result = await fn(db);
 
-    // On Windows/OneDrive, direct atomic write inside lock prevents EPERM rename collisions
-    fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), 'utf8');
+    try {
+      if (!fs.existsSync(RUNTIME_DIR)) {
+        fs.mkdirSync(RUNTIME_DIR, { recursive: true });
+      }
+      fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), 'utf8');
+    } catch (err) {
+      console.warn('Warning: Could not persist DB file to disk, state retained in memory:', err);
+    }
 
     return result;
   });

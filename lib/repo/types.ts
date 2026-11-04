@@ -249,7 +249,7 @@ export interface IAuthRepo {
   getUserByEmail(email: string): Promise<Profile | null>;
   listUsers(): Promise<Profile[]>;
   updateProfile(userId: string, patch: { full_name: string }): Promise<Result<Profile>>;
-  signUp?(input: { fullName: string; email: string }): Promise<Result<Profile>>;
+  signUp?(input: { fullName: string; email: string; password?: string; userId?: string }): Promise<Result<Profile>>;
 }
 
 export interface IRoomRepo {

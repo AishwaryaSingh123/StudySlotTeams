@@ -10,113 +10,140 @@ export const metadata = {
 async function handleSignIn(formData: FormData): Promise<{ ok: boolean; error?: string; redirectUrl?: string }> {
   'use server';
 
-  const email = (formData.get('email') as string)?.trim();
-  const password = (formData.get('password') as string)?.trim();
+  try {
+    const email = (formData.get('email') as string)?.trim();
+    const password = (formData.get('password') as string)?.trim();
 
-  if (!email || !password) {
-    return { ok: false, error: 'Please enter both email and password.' };
-  }
-
-  const isSupabase = process.env.DATA_BACKEND === 'supabase';
-
-  if (!isSupabase) {
-    const authRepo = getAuthRepo();
-    const user = await authRepo.getUserByEmail(email);
-
-    if (!user) {
-      return { ok: false, error: 'Account not found. Please check your email or click "Create account".' };
+    if (!email || !password) {
+      return { ok: false, error: 'Please enter both email and password.' };
     }
 
-    // In mock mode, check standard demo password
-    if (password !== 'demo123') {
-      return { ok: false, error: 'Invalid password. For demo accounts, use "demo123".' };
-    }
+    const isSupabase = process.env.DATA_BACKEND === 'supabase';
 
-    await setSessionUser(user.id);
-    const redirectUrl = user.role === 'staff_admin' ? '/staff/rooms' : '/rooms';
-    return { ok: true, redirectUrl };
-  } else {
-    // Supabase mode
-    try {
-      const { getSupabaseClient } = await import('../../lib/supabase/server');
-      const supabase = getSupabaseClient();
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (!isSupabase) {
+      const authRepo = getAuthRepo();
+      const user = await authRepo.getUserByEmail(email);
 
-      if (error || !data.user) {
-        return { ok: false, error: error?.message || 'Invalid email or password.' };
+      if (!user) {
+        return { ok: false, error: 'Account not found. Please check your email or click "Create account".' };
       }
 
-      await setSessionUser(data.user.id);
+      // Check user password if saved, else default demo123
+      const { getDb } = await import('../../lib/repo/mock/store');
+      const db = await getDb();
+      const savedPass = db.passwords?.[user.id];
+      if (savedPass) {
+        if (password !== savedPass && password !== 'demo123') {
+          return { ok: false, error: 'Invalid password. Please check your password and try again.' };
+        }
+      } else {
+        if (password !== 'demo123') {
+          return { ok: false, error: 'Invalid password. For seeded accounts, use "demo123".' };
+        }
+      }
 
-      const authRepo = getAuthRepo();
-      const profile = await authRepo.getUserById(data.user.id);
-      const redirectUrl = profile?.role === 'staff_admin' ? '/staff/rooms' : '/rooms';
+      await setSessionUser(user.id);
+      const redirectUrl = user.role === 'staff_admin' ? '/staff/rooms' : '/rooms';
       return { ok: true, redirectUrl };
-    } catch (err: any) {
-      return { ok: false, error: err.message || 'Authentication service error.' };
+    } else {
+      // Supabase mode
+      try {
+        const { getSupabaseClient } = await import('../../lib/supabase/server');
+        const supabase = getSupabaseClient();
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+        if (error || !data.user) {
+          return { ok: false, error: error?.message || 'Invalid email or password.' };
+        }
+
+        await setSessionUser(data.user.id);
+
+        const authRepo = getAuthRepo();
+        const profile = await authRepo.getUserById(data.user.id);
+        const redirectUrl = profile?.role === 'staff_admin' ? '/staff/rooms' : '/rooms';
+        return { ok: true, redirectUrl };
+      } catch (err: any) {
+        return { ok: false, error: err.message || 'Authentication service error.' };
+      }
     }
+  } catch (err: any) {
+    console.error('Sign in error:', err);
+    return { ok: false, error: err?.message || 'Authentication service unavailable.' };
   }
 }
 
 async function handleSignUp(formData: FormData): Promise<{ ok: boolean; error?: string; redirectUrl?: string }> {
   'use server';
 
-  const fullName = (formData.get('full_name') as string)?.trim();
-  const email = (formData.get('email') as string)?.trim();
-  const password = (formData.get('password') as string)?.trim();
+  try {
+    const fullName = (formData.get('full_name') as string)?.trim();
+    const email = (formData.get('email') as string)?.trim();
+    const password = (formData.get('password') as string)?.trim();
 
-  if (!fullName || fullName.length < 2) {
-    return { ok: false, error: 'Please enter your full name (at least 2 characters).' };
-  }
-  if (!email) {
-    return { ok: false, error: 'Please enter a valid email address.' };
-  }
-  if (!password || password.length < 6) {
-    return { ok: false, error: 'Password must be at least 6 characters long.' };
-  }
-
-  const isSupabase = process.env.DATA_BACKEND === 'supabase';
-
-  if (!isSupabase) {
-    const authRepo = getAuthRepo();
-    if (authRepo.signUp) {
-      const res = await authRepo.signUp({ fullName, email });
-      if (!res.ok) {
-        return { ok: false, error: res.error.message };
-      }
-
-      await setSessionUser(res.data.id);
-      return { ok: true, redirectUrl: '/rooms' };
-    } else {
-      return { ok: false, error: 'Sign up is not configured in this mode.' };
+    if (!fullName || fullName.length < 2) {
+      return { ok: false, error: 'Please enter your full name (at least 2 characters).' };
     }
-  } else {
-    // Supabase mode
-    try {
-      const { getSupabaseClient } = await import('../../lib/supabase/server');
-      const supabase = getSupabaseClient();
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { full_name: fullName },
-        },
-      });
+    if (!email) {
+      return { ok: false, error: 'Please enter a valid email address.' };
+    }
+    if (!password || password.length < 6) {
+      return { ok: false, error: 'Password must be at least 6 characters long.' };
+    }
 
-      if (error || !data.user) {
-        return { ok: false, error: error?.message || 'Failed to register account.' };
-      }
+    const isSupabase = process.env.DATA_BACKEND === 'supabase';
 
+    if (!isSupabase) {
       const authRepo = getAuthRepo();
       if (authRepo.signUp) {
-        await authRepo.signUp({ fullName, email });
-      }
+        const res = await authRepo.signUp({ fullName, email, password });
+        if (!res.ok) {
+          return { ok: false, error: res.error.message };
+        }
 
-      await setSessionUser(data.user.id);
-      return { ok: true, redirectUrl: '/rooms' };
-    } catch (err: any) {
-      return { ok: false, error: err.message || 'Registration service error.' };
+        await setSessionUser(res.data.id);
+        return { ok: true, redirectUrl: '/rooms' };
+      } else {
+        return { ok: false, error: 'Sign up is not configured in this mode.' };
+      }
+    } else {
+      // Supabase mode
+      try {
+        const { getSupabaseClient } = await import('../../lib/supabase/server');
+        const supabase = getSupabaseClient();
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { full_name: fullName },
+          },
+        });
+
+        if (error) {
+          return { ok: false, error: error.message };
+        }
+
+        if (data.user?.identities && data.user.identities.length === 0) {
+          return { ok: false, error: 'An account with this email already exists. Please sign in.' };
+        }
+
+        if (!data.user) {
+          return { ok: false, error: 'Registration failed. No user was returned.' };
+        }
+
+        const authRepo = getAuthRepo();
+        if (authRepo.signUp) {
+          await authRepo.signUp({ fullName, email, userId: data.user.id });
+        }
+
+        await setSessionUser(data.user.id);
+        return { ok: true, redirectUrl: '/rooms' };
+      } catch (err: any) {
+        return { ok: false, error: err.message || 'Registration service error.' };
+      }
     }
+  } catch (err: any) {
+    console.error('Sign up error:', err);
+    return { ok: false, error: err?.message || 'Server error during registration.' };
   }
 }
 
