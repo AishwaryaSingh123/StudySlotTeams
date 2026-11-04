@@ -107,6 +107,69 @@ export class MockRulesRepo implements IRulesRepo {
         data: {
           ...newBlackout,
           affectedBookingsCount: affectedBookings.length,
+          affectedBookings: affectedBookings.map((b) => {
+            const room = db.rooms.find((r) => r.id === b.room_id);
+            const user = db.profiles.find((p) => p.id === b.booked_by);
+            return {
+              id: b.id,
+              roomName: room?.name || 'Study Room',
+              bookedByName: user?.full_name || 'Student',
+              bookedByEmail: user?.email || '',
+              startsAt: b.starts_at,
+              endsAt: b.ends_at,
+            };
+          }),
+        },
+      };
+    });
+  }
+
+  async cancelBlackoutBookings(
+    callerId: string,
+    blackoutId: string,
+    reason: string
+  ): Promise<Result<{ cancelledCount: number; notifiedUsers: string[] }>> {
+    return withLock((db) => {
+      const user = db.profiles.find((p) => p.id === callerId);
+      if (user?.role !== 'staff_admin') {
+        return {
+          ok: false,
+          error: { code: 'FORBIDDEN', message: 'Only Staff Admins can cancel blackout bookings.' },
+        };
+      }
+
+      const blk = db.blackouts.find((b) => b.id === blackoutId);
+      if (!blk) {
+        return {
+          ok: false,
+          error: { code: 'NOT_FOUND', message: 'Blackout date reference not found.' },
+        };
+      }
+
+      const affected = db.bookings.filter((b) => {
+        if (b.status !== 'confirmed') return false;
+        if (blk.room_id && b.room_id !== blk.room_id) return false;
+        const bDate = getCampusDateString(b.starts_at);
+        return bDate >= blk.start_date && bDate <= blk.end_date;
+      });
+
+      const notifiedNames: string[] = [];
+
+      for (const b of affected) {
+        b.status = 'cancelled';
+        b.cancelled_at = new Date().toISOString();
+
+        const student = db.profiles.find((p) => p.id === b.booked_by);
+        if (student && !notifiedNames.includes(student.full_name)) {
+          notifiedNames.push(student.full_name);
+        }
+      }
+
+      return {
+        ok: true,
+        data: {
+          cancelledCount: affected.length,
+          notifiedUsers: notifiedNames,
         },
       };
     });

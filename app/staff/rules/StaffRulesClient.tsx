@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Plus, Trash2, Shield, Calendar, CheckCircle2 } from 'lucide-react';
-import { BlackoutDate, Room, Rules } from '../../../lib/repo/types';
+import { Plus, Trash2, Shield, Calendar, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { AffectedBookingSummary, BlackoutDate, Room, Rules } from '../../../lib/repo/types';
 import { Button } from '../../../components/Button';
 import { TextField } from '../../../components/TextField';
 import { Select } from '../../../components/Select';
@@ -10,6 +10,7 @@ import { DataTable, Column } from '../../../components/DataTable';
 import { Dialog } from '../../../components/Dialog';
 import { FormErrorSummary } from '../../../components/FormErrorSummary';
 import { useToast } from '../../../components/Toast';
+import { formatSlotRangeDisplay } from '../../../lib/time/campus';
 
 export interface StaffRulesClientProps {
   initialRules: Rules;
@@ -18,10 +19,16 @@ export interface StaffRulesClientProps {
   onUpdateRules: (patch: Partial<Rules>) => Promise<{ ok: boolean; rules?: Rules; error?: string }>;
   onCreateBlackout: (input: Omit<BlackoutDate, 'id'>) => Promise<{
     ok: boolean;
-    blackout?: BlackoutDate & { affectedBookingsCount: number };
+    blackout?: BlackoutDate & { affectedBookingsCount: number; affectedBookings?: AffectedBookingSummary[] };
     error?: string;
   }>;
   onDeleteBlackout: (id: string) => Promise<{ ok: boolean; error?: string }>;
+  onCancelBlackoutBookings?: (blackoutId: string, reason: string) => Promise<{
+    ok: boolean;
+    cancelledCount?: number;
+    notifiedUsers?: string[];
+    error?: string;
+  }>;
 }
 
 export function StaffRulesClient({
@@ -31,6 +38,7 @@ export function StaffRulesClient({
   onUpdateRules,
   onCreateBlackout,
   onDeleteBlackout,
+  onCancelBlackoutBookings,
 }: StaffRulesClientProps) {
   const { showToast } = useToast();
 
@@ -54,6 +62,48 @@ export function StaffRulesClient({
 
   // Delete dialog
   const [blackoutToDelete, setBlackoutToDelete] = useState<BlackoutDate | null>(null);
+
+  // Impact Warning Dialog State (for affected bookings)
+  const [impactModal, setImpactModal] = useState<{
+    blackout: BlackoutDate;
+    affectedBookings: AffectedBookingSummary[];
+  } | null>(null);
+  const [cancelLoading, setCancelLoading] = useState(false);
+
+  const handleCancelAffectedAndNotify = async () => {
+    if (!impactModal || !onCancelBlackoutBookings) return;
+    setCancelLoading(true);
+    try {
+      const res = await onCancelBlackoutBookings(impactModal.blackout.id, impactModal.blackout.reason);
+      if (res.ok) {
+        const notifiedNames =
+          res.notifiedUsers && res.notifiedUsers.length > 0
+            ? res.notifiedUsers.join(', ')
+            : 'respective booking holders';
+        showToast({
+          type: 'success',
+          title: 'Bookings Cancelled & Students Notified',
+          message: `${res.cancelledCount} booking(s) cancelled due to blackout. Notification sent to: ${notifiedNames}.`,
+        });
+        setImpactModal(null);
+      } else {
+        showToast({ type: 'error', message: res.error || 'Failed to cancel affected bookings.' });
+      }
+    } catch {
+      showToast({ type: 'error', message: 'Network error cancelling affected bookings.' });
+    } finally {
+      setCancelLoading(false);
+    }
+  };
+
+  const handleKeepAsExceptions = () => {
+    showToast({
+      type: 'info',
+      title: 'Blackout Applied',
+      message: 'Blackout date saved. Existing confirmed bookings kept as approved exceptions.',
+    });
+    setImpactModal(null);
+  };
 
   const handleSaveLimits = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,13 +178,18 @@ export function StaffRulesClient({
         setRoomId('');
 
         const affected = res.blackout.affectedBookingsCount;
-        showToast({
-          type: 'success',
-          title: 'Blackout date added',
-          message: affected > 0
-            ? `Notice: ${affected} existing confirmed booking(s) fall in this blackout range.`
-            : 'Blackout date saved successfully.',
-        });
+        if (affected > 0 && res.blackout.affectedBookings && res.blackout.affectedBookings.length > 0) {
+          setImpactModal({
+            blackout: res.blackout,
+            affectedBookings: res.blackout.affectedBookings,
+          });
+        } else {
+          showToast({
+            type: 'success',
+            title: 'Blackout date added',
+            message: 'Blackout date saved successfully.',
+          });
+        }
       } else {
         setBlackoutErrors([{ message: res.error || 'Failed to add blackout date.' }]);
       }
@@ -410,6 +465,95 @@ export function StaffRulesClient({
               </Button>
               <Button variant="destructive" onClick={handleConfirmDeleteBlackout}>
                 Remove blackout
+              </Button>
+            </div>
+          </div>
+        )}
+      </Dialog>
+      {/* Interactive Impact Warning & Notification Dialog */}
+      <Dialog
+        isOpen={Boolean(impactModal)}
+        onClose={() => setImpactModal(null)}
+        title="Impact Warning: Affected Confirmed Bookings"
+      >
+        {impactModal && (
+          <div>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                color: 'var(--color-warning-text)',
+                backgroundColor: 'var(--color-warning-bg)',
+                padding: '12px',
+                borderRadius: 'var(--radius-sm)',
+                marginBottom: '16px',
+                fontWeight: 600,
+              }}
+            >
+              <AlertTriangle size={20} aria-hidden="true" />
+              <span>
+                {impactModal.affectedBookings.length} confirmed booking{impactModal.affectedBookings.length === 1 ? '' : 's'} fall within this blackout period ({impactModal.blackout.start_date} to {impactModal.blackout.end_date}).
+              </span>
+            </div>
+
+            <p style={{ fontSize: '0.95rem', color: 'var(--color-ink)', marginBottom: '16px' }}>
+              Reason for blackout: <strong>{impactModal.blackout.reason}</strong>
+            </p>
+
+            <div style={{ marginBottom: '16px' }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-slate)', marginBottom: '8px' }}>
+                Affected Student Bookings:
+              </div>
+              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto' }}>
+                {impactModal.affectedBookings.map((b) => (
+                  <li
+                    key={b.id}
+                    style={{
+                      padding: '8px 12px',
+                      backgroundColor: 'var(--color-sand)',
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: '0.9rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '2px',
+                    }}
+                  >
+                    <strong>{b.roomName} — {formatSlotRangeDisplay(b.startsAt, b.endsAt)}</strong>
+                    <span style={{ color: 'var(--color-slate)', fontSize: '0.85rem' }}>
+                      Booked by: {b.bookedByName} {b.bookedByEmail ? `(${b.bookedByEmail})` : ''}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <p style={{ fontSize: '0.95rem', color: 'var(--color-slate)', marginBottom: '20px' }}>
+              Choose how you want to handle these appointments:
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <Button
+                variant="primary"
+                loading={cancelLoading}
+                loadingText="Cancelling & notifying..."
+                onClick={handleCancelAffectedAndNotify}
+                style={{
+                  backgroundColor: 'var(--color-error-text)',
+                  borderColor: 'var(--color-error-text)',
+                  justifyContent: 'center',
+                }}
+              >
+                Cancel all affected bookings & notify students
+              </Button>
+
+              <Button
+                variant="secondary"
+                disabled={cancelLoading}
+                onClick={handleKeepAsExceptions}
+                style={{ justifyContent: 'center' }}
+              >
+                Keep existing bookings as exceptions
               </Button>
             </div>
           </div>

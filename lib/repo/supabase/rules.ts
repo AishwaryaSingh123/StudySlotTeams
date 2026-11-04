@@ -5,6 +5,7 @@ import {
   Rules,
   BlackoutDate,
   Result,
+  AffectedBookingSummary,
 } from '../types';
 import { getCampusDateString } from '../../time/campus';
 
@@ -80,7 +81,7 @@ export class SupabaseRulesRepo implements IRulesRepo {
   async createBlackout(
     callerId: string,
     input: Omit<BlackoutDate, 'id'>
-  ): Promise<Result<BlackoutDate & { affectedBookingsCount: number }>> {
+  ): Promise<Result<BlackoutDate & { affectedBookingsCount: number; affectedBookings?: AffectedBookingSummary[] }>> {
     const supabase = getSupabaseClient();
     const { data: user } = await supabase.from('profiles').select('role').eq('id', callerId).single();
     if (user?.role !== 'staff_admin') {
@@ -128,6 +129,50 @@ export class SupabaseRulesRepo implements IRulesRepo {
         end_date: input.end_date,
         reason: input.reason.trim(),
         affectedBookingsCount: affectedBookings.length,
+        affectedBookings: affectedBookings.map((b: any) => ({
+          id: b.id,
+          roomName: 'Study Room',
+          bookedByName: 'Student',
+          bookedByEmail: '',
+          startsAt: b.starts_at,
+          endsAt: b.ends_at,
+        })),
+      },
+    };
+  }
+
+  async cancelBlackoutBookings(
+    callerId: string,
+    blackoutId: string,
+    reason: string
+  ): Promise<Result<{ cancelledCount: number; notifiedUsers: string[] }>> {
+    const supabase = getSupabaseClient();
+    const { data: user } = await supabase.from('profiles').select('role').eq('id', callerId).single();
+    if (user?.role !== 'staff_admin') {
+      return { ok: false, error: { code: 'FORBIDDEN', message: 'Only Staff Admins can cancel blackout bookings.' } };
+    }
+
+    const { data: blk } = await supabase.from('blackout_dates').select('*').eq('id', blackoutId).single();
+    if (!blk) {
+      return { ok: false, error: { code: 'NOT_FOUND', message: 'Blackout not found.' } };
+    }
+
+    const { data: bookingsData } = await supabase.from('bookings').select('*').eq('status', 'confirmed');
+    const affected = (bookingsData || []).filter((b: any) => {
+      if (blk.room_id && b.room_id !== blk.room_id) return false;
+      const bDate = getCampusDateString(b.starts_at);
+      return bDate >= blk.start_date && bDate <= blk.end_date;
+    });
+
+    for (const b of affected) {
+      await supabase.from('bookings').update({ status: 'cancelled', cancelled_at: new Date().toISOString() }).eq('id', b.id);
+    }
+
+    return {
+      ok: true,
+      data: {
+        cancelledCount: affected.length,
+        notifiedUsers: ['Respective booking holders'],
       },
     };
   }

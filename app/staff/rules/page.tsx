@@ -65,6 +65,22 @@ export default async function StaffRulesPage() {
     return { ok: false, error: res.error.message };
   }
 
+  async function handleCancelBlackoutBookings(blackoutId: string, reason: string) {
+    'use server';
+    const currentUser = await getSessionUser();
+    if (currentUser?.role !== 'staff_admin') return { ok: false, error: 'Unauthorized.' };
+
+    const rRepo = getRulesRepo();
+    if (rRepo.cancelBlackoutBookings) {
+      const res = await rRepo.cancelBlackoutBookings(currentUser.id, blackoutId, reason);
+      if (res.ok) {
+        return { ok: true, cancelledCount: res.data.cancelledCount, notifiedUsers: res.data.notifiedUsers };
+      }
+      return { ok: false, error: res.error.message };
+    }
+    return { ok: false, error: 'Operation not supported in this mode.' };
+  }
+
   return (
     <StaffRulesClient
       initialRules={rules}
@@ -73,6 +89,7 @@ export default async function StaffRulesPage() {
       onUpdateRules={handleUpdateRules}
       onCreateBlackout={handleCreateBlackout}
       onDeleteBlackout={handleDeleteBlackout}
+      onCancelBlackoutBookings={handleCancelBlackoutBookings}
     />
   );
 }

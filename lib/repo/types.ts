@@ -308,10 +308,20 @@ export interface IReportRepo {
   exportUsageReportCSV(period: 'all' | 'last_7_days' | 'last_30_days'): Promise<Result<{ filename: string; content: string }>>;
 }
 
+export interface AffectedBookingSummary {
+  id: string;
+  roomName: string;
+  bookedByName: string;
+  bookedByEmail: string;
+  startsAt: string;
+  endsAt: string;
+}
+
 export interface IRulesRepo {
   getRules(): Promise<Rules>;
   updateRules(callerId: string, patch: Partial<Rules>): Promise<Result<Rules>>;
   listBlackoutDates(): Promise<BlackoutDate[]>;
-  createBlackout(callerId: string, input: Omit<BlackoutDate, 'id'>): Promise<Result<BlackoutDate & { affectedBookingsCount: number }>>;
+  createBlackout(callerId: string, input: Omit<BlackoutDate, 'id'>): Promise<Result<BlackoutDate & { affectedBookingsCount: number; affectedBookings?: AffectedBookingSummary[] }>>;
   deleteBlackout(callerId: string, id: string): Promise<Result<boolean>>;
+  cancelBlackoutBookings?(callerId: string, blackoutId: string, reason: string): Promise<Result<{ cancelledCount: number; notifiedUsers: string[] }>>;
 }
