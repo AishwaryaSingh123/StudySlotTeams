@@ -8,26 +8,26 @@
 
 StudySlot Teams implements the complete university team study room reservation and project tracking workflow across 6 core functional modules:
 
-- **F1: Room Search & Conflict-Free Booking** (Demonstrated by Member A)
+- **F1: Room Search & Conflict-Free Booking** 
   - Search by campus date, start/end time, capacity, equipment, and building.
   - Interactive 30-minute slot timeline with half-open intervals `[start, end)`.
   - Next-available slot suggestion upon conflict (M5) and rubber-stamp confirmation (M6).
   - 8-second accessible Undo window upon booking cancellation; cancelled records remain terminal.
-- **F2: Team Session Booking** (Demonstrated by Member A)
+- **F2: Team Session Booking** 
   - Team lead reservation linking upcoming non-completed tasks as meeting agendas.
   - Team member attendance tracking with invite/accept states and optional 200-char session note.
-- **F3: Task Board** (Demonstrated by Member B)
+- **F3: Task Board**
   - 4-column kanban board (`todo`, `in_progress`, `in_review`, `done`).
   - Accessible keyboard-driven "Move to" button workflow (zero drag-and-drop dependency).
   - Soft deletion with reverse-chronological activity log audit trail and 8-second Undo restore.
-- **F4: Milestones & Unified Calendar** (Demonstrated by Member B)
+- **F4: Milestones & Unified Calendar** 
   - Milestone progress tracking with automatic task completion percentages.
   - Dual-mode calendar: Accessible **Agenda list view** (default) and **Week grid view**.
 - **F5: Contribution Log & Report** (Demonstrated by Member C)
   - Transparent workload accounting (assigned tasks, points done, open points, share %).
   - Formula injection sanitized CSV download (`=`, `+`, `-`, `@` escaped with single quote).
   - Printable HTML report formatted for academic assessment.
-- **F6: Staff Room & Rules Management** (Demonstrated by Member C)
+- **F6: Staff Room & Rules Management** 
   - Room inventory, operating hours, and equipment management.
   - Deactivation safety inspection: view and cancel affected future bookings with warning count.
   - Blackout date calendar and utilization ledger with CSV export.
