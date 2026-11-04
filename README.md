@@ -65,7 +65,7 @@ StudySlot Teams uses an identical repository contract (`lib/repo/types.ts`) supp
 ```bash
 # 1. Clone repository & install dependencies
 git clone <repository-url>
-cd webProj
+cd StudySlotTeams
 npm install
 
 # 2. Configure environment variables (defaults to mock mode)
