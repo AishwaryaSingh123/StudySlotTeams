@@ -7,7 +7,7 @@ import { getAuthRepo } from '../repo';
 const SESSION_COOKIE_NAME = 'studyslot_session';
 
 export async function getSessionUser(): Promise<Profile | null> {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME);
   if (!sessionCookie || !sessionCookie.value) {
     return null;
@@ -19,7 +19,7 @@ export async function getSessionUser(): Promise<Profile | null> {
 }
 
 export async function setSessionUser(userId: string): Promise<void> {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE_NAME, userId, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -30,6 +30,6 @@ export async function setSessionUser(userId: string): Promise<void> {
 }
 
 export async function clearSessionUser(): Promise<void> {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   cookieStore.delete(SESSION_COOKIE_NAME);
 }

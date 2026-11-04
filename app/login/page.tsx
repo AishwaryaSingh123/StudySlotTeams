@@ -10,26 +10,59 @@ export const metadata = {
 async function handleSignIn(formData: FormData) {
   'use server';
 
-  const email = formData.get('email') as string;
-  const password = formData.get('password') as string;
+  const email = (formData.get('email') as string)?.trim();
+  const password = (formData.get('password') as string)?.trim();
 
   if (!email || !password) {
     return { error: 'Please enter both email and password.' };
   }
 
-  const authRepo = getAuthRepo();
-  const user = await authRepo.getUserByEmail(email.trim());
+  const isSupabase = process.env.DATA_BACKEND === 'supabase';
 
-  if (!user) {
-    return { error: 'Account not found. Use one of the seeded demo accounts below.' };
-  }
+  if (!isSupabase) {
+    // Mock mode password verification
+    if (password !== 'demo123') {
+      return { error: 'Invalid password. For seeded demo accounts, use "demo123".' };
+    }
 
-  await setSessionUser(user.id);
+    const authRepo = getAuthRepo();
+    const user = await authRepo.getUserByEmail(email);
 
-  if (user.role === 'staff_admin') {
-    redirect('/staff/rooms');
+    if (!user) {
+      return { error: 'Account not found. Use one of the seeded demo accounts below.' };
+    }
+
+    await setSessionUser(user.id);
+
+    if (user.role === 'staff_admin') {
+      redirect('/staff/rooms');
+    } else {
+      redirect('/rooms');
+    }
   } else {
-    redirect('/rooms');
+    // Supabase mode authentication
+    try {
+      const { getSupabaseClient } = await import('../../lib/supabase/server');
+      const supabase = getSupabaseClient();
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+      if (error || !data.user) {
+        return { error: error?.message || 'Invalid email or password.' };
+      }
+
+      await setSessionUser(data.user.id);
+
+      const authRepo = getAuthRepo();
+      const profile = await authRepo.getUserById(data.user.id);
+
+      if (profile?.role === 'staff_admin') {
+        redirect('/staff/rooms');
+      } else {
+        redirect('/rooms');
+      }
+    } catch (err: any) {
+      return { error: err.message || 'Authentication failed.' };
+    }
   }
 }
 
