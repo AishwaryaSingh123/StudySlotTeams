@@ -84,6 +84,8 @@ export default async function BookRoomPage({
       initialEndTime={endTime}
       userTeams={userTeams}
       dailyHoursUsed={dailyHoursUsed}
+      userBookings={allUserBookings}
+      userId={user.id}
       onBook={handleBook}
     />
   );

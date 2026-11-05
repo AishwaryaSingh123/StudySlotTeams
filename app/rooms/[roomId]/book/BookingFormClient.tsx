@@ -11,6 +11,7 @@ import { TextArea } from '../../../../components/TextArea';
 import { FormErrorSummary } from '../../../../components/FormErrorSummary';
 import { BookingStamp } from '../../../../components/BookingStamp';
 import { campusTimeToUtc, durationInHours, formatSlotRangeDisplay, getCampusDateString } from '../../../../lib/time/campus';
+import { calculateDailyBookedHours } from '../../../../lib/rules/booking';
 
 export interface BookingFormClientProps {
   room: Room;
@@ -19,7 +20,9 @@ export interface BookingFormClientProps {
   initialStartTime?: string;
   initialEndTime?: string;
   userTeams: Team[];
-  dailyHoursUsed: number;
+  dailyHoursUsed?: number;
+  userBookings?: Booking[];
+  userId?: string;
   onBook: (data: {
     roomId: string;
     startsAt: string;
@@ -35,7 +38,9 @@ export function BookingFormClient({
   initialStartTime = '14:00',
   initialEndTime = '15:00',
   userTeams,
-  dailyHoursUsed,
+  dailyHoursUsed = 0,
+  userBookings = [],
+  userId = '',
   onBook,
 }: BookingFormClientProps) {
   const router = useRouter();
@@ -53,6 +58,11 @@ export function BookingFormClient({
   const [confirmedBooking, setConfirmedBooking] = useState<Booking | null>(null);
 
   const today = getCampusDateString(new Date());
+
+  // Compute daily hours used dynamically for the currently selected date
+  const effectiveDailyHoursUsed = userBookings && userBookings.length > 0 && userId
+    ? calculateDailyBookedHours(userId, date, userBookings)
+    : dailyHoursUsed;
 
   // Compute duration
   let duration = 0;
@@ -119,9 +129,9 @@ export function BookingFormClient({
       });
     }
 
-    if (dailyHoursUsed + duration > rules.max_hours_per_day) {
+    if (effectiveDailyHoursUsed + duration > rules.max_hours_per_day) {
       errors.push({
-        message: `You have booked ${dailyHoursUsed}h of ${rules.max_hours_per_day}h allowed today. Requesting ${duration}h exceeds the limit.`,
+        message: `You have booked ${effectiveDailyHoursUsed}h of ${rules.max_hours_per_day}h allowed on this date. Requesting ${duration}h exceeds the limit. (Cancelled bookings do not count against your limit).`,
       });
     }
 
@@ -470,19 +480,22 @@ export function BookingFormClient({
                 Campus limit: <strong>{rules.max_hours_per_day}h/day</strong>
               </p>
               <p style={{ fontSize: '0.9rem', color: 'var(--color-slate)' }}>
-                Used today: <strong>{dailyHoursUsed}h</strong> | Requested: <strong>{duration}h</strong>
+                Used on {date}: <strong>{effectiveDailyHoursUsed}h</strong> | Requested: <strong>{duration}h</strong>
               </p>
               <p
                 style={{
                   fontSize: '0.9rem',
                   fontWeight: 700,
-                  color: dailyHoursUsed + duration <= rules.max_hours_per_day ? 'var(--color-success-text)' : 'var(--color-error-text)',
+                  color: effectiveDailyHoursUsed + duration <= rules.max_hours_per_day ? 'var(--color-success-text)' : 'var(--color-error-text)',
                   marginTop: '4px',
                 }}
               >
-                {dailyHoursUsed + duration <= rules.max_hours_per_day
-                  ? `✓ Within daily limit (${dailyHoursUsed + duration}/${rules.max_hours_per_day}h)`
-                  : `✕ Exceeds daily limit (${dailyHoursUsed + duration}/${rules.max_hours_per_day}h)`}
+                {effectiveDailyHoursUsed + duration <= rules.max_hours_per_day
+                  ? `✓ Within daily limit (${effectiveDailyHoursUsed + duration}/${rules.max_hours_per_day}h)`
+                  : `✕ Exceeds daily limit (${effectiveDailyHoursUsed + duration}/${rules.max_hours_per_day}h)`}
+              </p>
+              <p style={{ fontSize: '0.8rem', color: 'var(--color-slate)', marginTop: '2px', fontStyle: 'italic' }}>
+                Cancelled bookings are automatically excluded from your daily limit.
               </p>
             </div>
           </div>

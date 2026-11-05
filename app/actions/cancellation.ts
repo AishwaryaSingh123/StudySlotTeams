@@ -18,3 +18,19 @@ export async function dismissCancellationNoticeAction(bookingId: string) {
     return { ok: false, error: err?.message || 'Failed to dismiss cancellation notice.' };
   }
 }
+
+export async function checkUnacknowledgedCancellationsAction() {
+  try {
+    const user = await getSessionUser();
+    if (!user || user.role !== 'student') {
+      return { ok: true, data: [] };
+    }
+
+    const bookingRepo = getBookingRepo();
+    const cancellations = await bookingRepo.getUnacknowledgedCancellations(user.id);
+    return { ok: true, data: cancellations };
+  } catch (err: any) {
+    console.error('Error checking unacknowledged cancellations:', err);
+    return { ok: false, error: err?.message || 'Failed to check unacknowledged cancellations.' };
+  }
+}

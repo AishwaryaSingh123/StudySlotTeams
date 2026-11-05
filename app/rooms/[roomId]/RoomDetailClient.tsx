@@ -4,10 +4,11 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Users, Clock, ShieldCheck, Check } from 'lucide-react';
-import { Room, Rules, SlotAvailability } from '../../../lib/repo/types';
+import { Booking, Room, Rules, SlotAvailability } from '../../../lib/repo/types';
 import { Button } from '../../../components/Button';
 import { SlotTimeline } from '../../../components/SlotTimeline';
 import { TextField } from '../../../components/TextField';
+import { calculateDailyBookedHours } from '../../../lib/rules/booking';
 
 export interface RoomDetailClientProps {
   room: Room;
@@ -15,6 +16,8 @@ export interface RoomDetailClientProps {
   initialDate: string;
   initialSlots: SlotAvailability[];
   dailyHoursUsed: number;
+  userBookings?: Booking[];
+  userId?: string;
 }
 
 export function RoomDetailClient({
@@ -23,6 +26,8 @@ export function RoomDetailClient({
   initialDate,
   initialSlots,
   dailyHoursUsed,
+  userBookings = [],
+  userId = '',
 }: RoomDetailClientProps) {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(initialDate);
@@ -32,7 +37,11 @@ export function RoomDetailClient({
     router.push(`/rooms/${room.id}?date=${newDate}`);
   };
 
-  const isLimitReached = dailyHoursUsed >= rules.max_hours_per_day;
+  const effectiveDailyHoursUsed = userBookings.length > 0 && userId
+    ? calculateDailyBookedHours(userId, selectedDate, userBookings)
+    : dailyHoursUsed;
+
+  const isLimitReached = effectiveDailyHoursUsed >= rules.max_hours_per_day;
 
   return (
     <div style={{ maxWidth: '900px', margin: '0 auto' }}>
@@ -98,7 +107,7 @@ export function RoomDetailClient({
             fontWeight: 600,
           }}
         >
-          You have booked {dailyHoursUsed} of {rules.max_hours_per_day} hours allowed today. Choose another date or cancel an existing booking.
+          You have booked {effectiveDailyHoursUsed} of {rules.max_hours_per_day} hours allowed on {selectedDate}. Choose another date or cancel an existing booking. (Cancelled bookings are not counted).
         </div>
       )}
 

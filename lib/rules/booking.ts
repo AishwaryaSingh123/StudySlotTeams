@@ -73,12 +73,20 @@ export function calculateDailyBookedHours(
   allBookings: Booking[]
 ): number {
   return allBookings
-    .filter(
-      (b) =>
-        b.status === 'confirmed' &&
-        b.booked_by === userId &&
-        getCampusDateString(b.starts_at) === targetDateStr
-    )
+    .filter((b) => {
+      // Any cancelled booking must NEVER be counted toward daily limits
+      if (b.status === 'cancelled' || Boolean(b.cancelled_at)) {
+        return false;
+      }
+      if (b.status !== 'confirmed') {
+        return false;
+      }
+      const isOwner = b.booked_by === userId || (b as any).created_by === userId;
+      if (!isOwner) {
+        return false;
+      }
+      return getCampusDateString(b.starts_at) === targetDateStr;
+    })
     .reduce((sum, b) => sum + durationInHours(b.starts_at, b.ends_at), 0);
 }
 

@@ -250,11 +250,8 @@ export class MockBookingRepo implements IBookingRepo {
         if (b.booked_by !== userId) return false;
         if (b.status !== 'cancelled') return false;
         if (b.cancellation_notified === true) return false;
-        return (
-          b.cancellation_notified === false ||
-          Boolean(b.cancellation_reason) ||
-          (Boolean(b.cancelled_by) && b.cancelled_by !== userId)
-        );
+        if (b.cancelled_by === userId && !b.cancellation_reason) return false;
+        return true;
       })
       .map((b) => {
         const room = db.rooms.find((r) => r.id === b.room_id);

@@ -43,7 +43,7 @@ export default async function RootLayout({
         </a>
         <ToastProvider>
           <Header user={user} />
-          {user && user.role === 'student' && unacknowledgedCancellations.length > 0 && (
+          {user && user.role === 'student' && (
             <CancellationNoticeModal
               initialCancellations={unacknowledgedCancellations}
               userId={user.id}

@@ -2,13 +2,14 @@ import { describe, it, expect } from 'vitest';
 import { MockBookingRepo } from '../../lib/repo/mock/bookings';
 import { MockRulesRepo } from '../../lib/repo/mock/rules';
 import { getDb, withLock } from '../../lib/repo/mock/store';
+import { calculateDailyBookedHours } from '../../lib/rules/booking';
 
 describe('Cancellation Notifications for Affected Students', () => {
-  it('identifies unacknowledged cancellations specifically for the affected student', async () => {
+  it('identifies unacknowledged cancellations specifically for the affected student and restores daily allowance', async () => {
     const bookingRepo = new MockBookingRepo();
     const rulesRepo = new MockRulesRepo();
 
-    // Setup: Create a booking for Asha on 2026-11-20
+    // Setup: Create a booking for Asha on 2026-11-20 (1 hour: 08:30-09:30 UTC -> 14:00-15:00 IST)
     const db = await getDb();
     const testBookingId = 'test-cancellation-booking-1';
 
@@ -39,6 +40,11 @@ describe('Cancellation Notifications for Affected Students', () => {
       });
     });
 
+    // Before cancellation: Asha has 1 hour booked on 2026-11-20
+    let currentStore = await getDb();
+    let hoursUsed = calculateDailyBookedHours('u-asha-02', '2026-11-20', currentStore.bookings);
+    expect(hoursUsed).toBe(1);
+
     // Before cancellation: Asha has no unacknowledged cancellations
     let ashaCancellations = await bookingRepo.getUnacknowledgedCancellations('u-asha-02');
     const existingCount = ashaCancellations.filter((b) => b.id === testBookingId).length;
@@ -52,6 +58,11 @@ describe('Cancellation Notifications for Affected Students', () => {
     );
 
     expect(cancelRes.ok).toBe(true);
+
+    // Verify: After cancellation, cancelled hours are NO LONGER COUNTED (restored to 0)
+    currentStore = await getDb();
+    hoursUsed = calculateDailyBookedHours('u-asha-02', '2026-11-20', currentStore.bookings);
+    expect(hoursUsed).toBe(0);
 
     // Asha now has the unacknowledged cancellation
     ashaCancellations = await bookingRepo.getUnacknowledgedCancellations('u-asha-02');

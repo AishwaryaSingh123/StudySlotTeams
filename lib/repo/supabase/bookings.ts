@@ -360,16 +360,22 @@ export class SupabaseBookingRepo implements IBookingRepo {
       .eq('created_by', userId)
       .eq('status', 'cancelled');
 
-    if (error || !bookings) return [];
+    let list = bookings;
+    if (error || !list) {
+      // Fallback query if relation embed fails
+      const { data: simpleList } = await supabase
+        .from('bookings')
+        .select('*')
+        .eq('created_by', userId)
+        .eq('status', 'cancelled');
+      list = simpleList || [];
+    }
 
-    return bookings
+    return list
       .filter((b: any) => {
         if (b.cancellation_notified === true) return false;
-        return (
-          b.cancellation_notified === false ||
-          Boolean(b.cancellation_reason) ||
-          (Boolean(b.cancelled_by) && b.cancelled_by !== userId)
-        );
+        if (b.cancelled_by === userId && !b.cancellation_reason) return false;
+        return true;
       })
       .map((b: any) => ({
         id: b.id,
@@ -382,7 +388,7 @@ export class SupabaseBookingRepo implements IBookingRepo {
         status: b.status,
         created_at: b.created_at,
         cancelled_at: b.cancelled_at || null,
-        cancellation_reason: b.cancellation_reason || 'Administrative or campus blackout cancellation',
+        cancellation_reason: b.cancellation_reason || 'Campus blackout or administrative schedule change',
         cancellation_notified: Boolean(b.cancellation_notified),
         cancelled_by: b.cancelled_by || null,
         room: b.rooms

@@ -61,6 +61,8 @@ export default async function RoomDetailPage({
       initialDate={targetDate}
       initialSlots={slots}
       dailyHoursUsed={dailyHoursUsed}
+      userBookings={allUserBookings}
+      userId={user.id}
     />
   );
 }

@@ -7,17 +7,17 @@ import { Dialog } from './Dialog';
 import { Button } from './Button';
 import { Booking } from '../lib/repo/types';
 import { formatSlotRangeDisplay } from '../lib/time/campus';
-import { dismissCancellationNoticeAction } from '../app/actions/cancellation';
+import { dismissCancellationNoticeAction, checkUnacknowledgedCancellationsAction } from '../app/actions/cancellation';
 
 export interface CancellationNoticeModalProps {
-  initialCancellations: Booking[];
+  initialCancellations?: Booking[];
   userId: string;
 }
 
 const STORAGE_KEY_PREFIX = 'studyslot_ack_cancellations_';
 
 export function CancellationNoticeModal({
-  initialCancellations,
+  initialCancellations = [],
   userId,
 }: CancellationNoticeModalProps) {
   const [cancellations, setCancellations] = useState<Booking[]>([]);
@@ -25,30 +25,35 @@ export function CancellationNoticeModal({
   const [dismissing, setDismissing] = useState(false);
 
   useEffect(() => {
-    if (!initialCancellations || initialCancellations.length === 0) {
-      setCancellations([]);
-      setIsOpen(false);
-      return;
-    }
+    const filterAndSet = (list: Booking[]) => {
+      try {
+        const storageKey = `${STORAGE_KEY_PREFIX}${userId}`;
+        const savedAck = JSON.parse(localStorage.getItem(storageKey) || '[]') as string[];
+        const unacknowledged = list.filter((b) => !savedAck.includes(b.id));
 
-    try {
-      const storageKey = `${STORAGE_KEY_PREFIX}${userId}`;
-      const savedAck = JSON.parse(localStorage.getItem(storageKey) || '[]') as string[];
-
-      // Filter out bookings already acknowledged locally in this browser
-      const unacknowledged = initialCancellations.filter((b) => !savedAck.includes(b.id));
-
-      if (unacknowledged.length > 0) {
-        setCancellations(unacknowledged);
-        setIsOpen(true);
-      } else {
-        setCancellations([]);
-        setIsOpen(false);
+        if (unacknowledged.length > 0) {
+          setCancellations(unacknowledged);
+          setIsOpen(true);
+        } else {
+          setCancellations([]);
+          setIsOpen(false);
+        }
+      } catch {
+        setCancellations(list);
+        setIsOpen(list.length > 0);
       }
-    } catch {
-      // In case localStorage is blocked/unavailable
-      setCancellations(initialCancellations);
-      setIsOpen(true);
+    };
+
+    if (initialCancellations && initialCancellations.length > 0) {
+      filterAndSet(initialCancellations);
+    } else {
+      checkUnacknowledgedCancellationsAction()
+        .then((res) => {
+          if (res.ok && res.data && res.data.length > 0) {
+            filterAndSet(res.data);
+          }
+        })
+        .catch(() => {});
     }
   }, [initialCancellations, userId]);
 
