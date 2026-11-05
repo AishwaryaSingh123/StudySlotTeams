@@ -3,14 +3,14 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Clock, Info, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Clock, Info, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Booking, Room, Rules, Team } from '../../../../lib/repo/types';
 import { Button } from '../../../../components/Button';
 import { TextField } from '../../../../components/TextField';
 import { TextArea } from '../../../../components/TextArea';
 import { FormErrorSummary } from '../../../../components/FormErrorSummary';
 import { BookingStamp } from '../../../../components/BookingStamp';
-import { campusTimeToUtc, durationInHours, formatSlotRangeDisplay } from '../../../../lib/time/campus';
+import { campusTimeToUtc, durationInHours, formatSlotRangeDisplay, getCampusDateString } from '../../../../lib/time/campus';
 
 export interface BookingFormClientProps {
   room: Room;
@@ -52,6 +52,8 @@ export function BookingFormClient({
   const [conflictFreeSlot, setConflictFreeSlot] = useState<{ start: string; end: string } | null>(null);
   const [confirmedBooking, setConfirmedBooking] = useState<Booking | null>(null);
 
+  const today = getCampusDateString(new Date());
+
   // Compute duration
   let duration = 0;
   try {
@@ -69,7 +71,15 @@ export function BookingFormClient({
 
     const errors: { fieldId?: string; message: string }[] = [];
 
-    if (!date) errors.push({ fieldId: 'booking-date', message: 'Date is required.' });
+    if (!date) {
+      errors.push({ fieldId: 'booking-date', message: 'Date is required.' });
+    } else if (date < today) {
+      errors.push({
+        fieldId: 'booking-date',
+        message: 'Cannot book a room for a past date. Please select today or a future date.',
+      });
+    }
+
     if (!startTime) errors.push({ fieldId: 'booking-start', message: 'Start time is required.' });
     if (!endTime) errors.push({ fieldId: 'booking-end', message: 'End time is required.' });
 
@@ -352,9 +362,11 @@ export function BookingFormClient({
               id="booking-date"
               label="Date"
               type="date"
+              min={today}
               required
               value={date}
               onChange={(e) => setDate(e.target.value)}
+              helperText={`Bookings can only be scheduled for today (${today}) or future dates.`}
             />
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -395,9 +407,16 @@ export function BookingFormClient({
               variant="primary"
               loading={loading}
               loadingText="Confirming booking…"
-              style={{ width: '100%', marginTop: '8px' }}
+              style={{
+                width: '100%',
+                marginTop: '16px',
+                padding: '12px 24px',
+                fontSize: '1.05rem',
+                fontWeight: 700,
+              }}
             >
-              Confirm and book slot
+              <CheckCircle2 size={18} aria-hidden="true" />
+              <span>Confirm and book slot</span>
             </Button>
           </form>
         </div>

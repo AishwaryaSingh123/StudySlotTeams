@@ -99,6 +99,8 @@ export function MilestonesClient({
 
     if (!dueDate) {
       errs.push({ fieldId: 'ms-due-date-input', message: 'Due date is required.' });
+    } else if (dueDate < today) {
+      errs.push({ fieldId: 'ms-due-date-input', message: 'Milestone due date cannot be in the past.' });
     }
 
     if (description && description.length > 500) {
@@ -325,6 +327,7 @@ export function MilestonesClient({
             id="ms-due-date-input"
             label="Due date"
             type="date"
+            min={today}
             required
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}

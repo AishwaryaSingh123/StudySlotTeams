@@ -10,7 +10,7 @@ import { DataTable, Column } from '../../../components/DataTable';
 import { Dialog } from '../../../components/Dialog';
 import { FormErrorSummary } from '../../../components/FormErrorSummary';
 import { useToast } from '../../../components/Toast';
-import { formatSlotRangeDisplay } from '../../../lib/time/campus';
+import { formatSlotRangeDisplay, getCampusDateString } from '../../../lib/time/campus';
 
 export interface StaffRulesClientProps {
   initialRules: Rules;
@@ -53,6 +53,7 @@ export function StaffRulesClient({
   const [limitsErrors, setLimitsErrors] = useState<{ message: string }[]>([]);
 
   // Add Blackout Form
+  const today = getCampusDateString(new Date());
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [reason, setReason] = useState('');
@@ -148,8 +149,18 @@ export function StaffRulesClient({
     setBlackoutErrors([]);
 
     const errs: { fieldId?: string; message: string }[] = [];
-    if (!startDate) errs.push({ fieldId: 'blk-start-date', message: 'Start date is required.' });
-    if (!endDate) errs.push({ fieldId: 'blk-end-date', message: 'End date is required.' });
+    if (!startDate) {
+      errs.push({ fieldId: 'blk-start-date', message: 'Start date is required.' });
+    } else if (startDate < today) {
+      errs.push({ fieldId: 'blk-start-date', message: 'Blackout start date cannot be in the past.' });
+    }
+
+    if (!endDate) {
+      errs.push({ fieldId: 'blk-end-date', message: 'End date is required.' });
+    } else if (endDate < today) {
+      errs.push({ fieldId: 'blk-end-date', message: 'Blackout end date cannot be in the past.' });
+    }
+
     if (!reason.trim()) errs.push({ fieldId: 'blk-reason', message: 'Reason is required.' });
 
     if (startDate && endDate && endDate < startDate) {
@@ -388,6 +399,7 @@ export function StaffRulesClient({
                 id="blk-start-date"
                 label="Start date"
                 type="date"
+                min={today}
                 required
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
@@ -397,6 +409,7 @@ export function StaffRulesClient({
                 id="blk-end-date"
                 label="End date"
                 type="date"
+                min={startDate || today}
                 required
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}

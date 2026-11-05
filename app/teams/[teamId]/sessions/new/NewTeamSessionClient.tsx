@@ -10,7 +10,7 @@ import { TextField } from '@/components/TextField';
 import { TextArea } from '@/components/TextArea';
 import { FormErrorSummary } from '@/components/FormErrorSummary';
 import { BookingStamp } from '@/components/BookingStamp';
-import { campusTimeToUtc, durationInHours, formatSlotRangeDisplay } from '@/lib/time/campus';
+import { campusTimeToUtc, durationInHours, formatSlotRangeDisplay, getCampusDateString } from '@/lib/time/campus';
 
 export interface NewTeamSessionClientProps {
   team: Team;
@@ -42,6 +42,8 @@ export function NewTeamSessionClient({
   onBookSession,
 }: NewTeamSessionClientProps) {
   const router = useRouter();
+
+  const today = getCampusDateString(new Date());
 
   const [date, setDate] = useState(initialDate);
   const [startTime, setStartTime] = useState('14:00');
@@ -84,7 +86,11 @@ export function NewTeamSessionClient({
     const errors: { fieldId?: string; message: string }[] = [];
 
     if (!selectedRoomId) errors.push({ message: 'Select a study room.' });
-    if (!date) errors.push({ fieldId: 'session-date', message: 'Date is required.' });
+    if (!date) {
+      errors.push({ fieldId: 'session-date', message: 'Date is required.' });
+    } else if (date < today) {
+      errors.push({ fieldId: 'session-date', message: 'Cannot schedule a team session for a past date.' });
+    }
     if (!startTime) errors.push({ fieldId: 'session-start', message: 'Start time is required.' });
     if (!endTime) errors.push({ fieldId: 'session-end', message: 'End time is required.' });
 
@@ -314,6 +320,7 @@ export function NewTeamSessionClient({
               id="session-date"
               label="Date"
               type="date"
+              min={today}
               required
               value={date}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDate(e.target.value)}

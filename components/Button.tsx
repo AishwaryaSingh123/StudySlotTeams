@@ -46,11 +46,15 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       variantStyle = {
         backgroundColor: 'var(--color-stacks-green)',
         color: '#FFFFFF',
+        border: '1px solid var(--color-stacks-green-dark)',
+        boxShadow: '0 1px 3px rgba(27, 36, 48, 0.18)',
       };
     } else if (variant === 'destructive') {
       variantStyle = {
         backgroundColor: 'var(--color-error-text)',
         color: '#FFFFFF',
+        border: '1px solid #7E1515',
+        boxShadow: '0 1px 3px rgba(155, 28, 28, 0.25)',
       };
     } else if (variant === 'link') {
       variantStyle = {
@@ -66,6 +70,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         backgroundColor: 'var(--color-surface)',
         color: 'var(--color-ink)',
         border: '1px solid var(--color-control-border)',
+        boxShadow: '0 1px 2px rgba(27, 36, 48, 0.06)',
       };
     }
 

@@ -9,7 +9,16 @@ import {
 } from '../time/campus';
 
 export interface BookingRuleViolation {
-  code: 'INVALID_STEP' | 'OUTSIDE_HOURS' | 'EXCEEDS_MAX_DURATION' | 'EXCEEDS_DAILY_LIMIT' | 'BLACKOUT_DATE' | 'ROOM_INACTIVE' | 'CAPACITY_EXCEEDED' | 'CONFLICT';
+  code:
+    | 'INVALID_STEP'
+    | 'OUTSIDE_HOURS'
+    | 'EXCEEDS_MAX_DURATION'
+    | 'EXCEEDS_DAILY_LIMIT'
+    | 'BLACKOUT_DATE'
+    | 'ROOM_INACTIVE'
+    | 'CAPACITY_EXCEEDED'
+    | 'CONFLICT'
+    | 'PAST_DATE';
   message: string;
 }
 
@@ -98,6 +107,15 @@ export function validateBookingRules(params: {
   const campusDate = getCampusDateString(startsAt);
   const startTime = getCampusTimeString(startsAt);
   const endTime = getCampusTimeString(endsAt);
+
+  // Past date check
+  const todayStr = getCampusDateString(new Date());
+  if (campusDate < todayStr) {
+    return {
+      valid: false,
+      error: { code: 'PAST_DATE', message: 'Cannot book a study room for a past date.' },
+    };
+  }
 
   // 1. Step check
   if (!validateSlotStep(startTime, rules.slot_minutes) || !validateSlotStep(endTime, rules.slot_minutes)) {

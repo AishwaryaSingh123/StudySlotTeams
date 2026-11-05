@@ -126,6 +126,10 @@ export function TaskBoardClient({
       errors.push({ fieldId: 'task-points-input', message: 'Story points must be between 1 and 20.' });
     }
 
+    if (formDueDate && formDueDate < today) {
+      errors.push({ fieldId: 'task-due-date', message: 'Task due date cannot be set in the past.' });
+    }
+
     if (errors.length > 0) {
       setModalErrors(errors);
       return;
@@ -599,6 +603,7 @@ export function TaskBoardClient({
               id="task-due-date"
               label="Due date"
               type="date"
+              min={today}
               value={formDueDate}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormDueDate(e.target.value)}
             />

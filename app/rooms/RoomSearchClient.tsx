@@ -10,6 +10,7 @@ import { TextField } from '../../components/TextField';
 import { Select } from '../../components/Select';
 import { DataTable, Column } from '../../components/DataTable';
 import { FormErrorSummary } from '../../components/FormErrorSummary';
+import { getCampusDateString } from '../../lib/time/campus';
 
 const EQUIPMENT_OPTIONS: { id: EquipmentType; label: string }[] = [
   { id: 'whiteboard', label: 'Whiteboard' },
@@ -41,6 +42,8 @@ export function RoomSearchClient({
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
+  const today = getCampusDateString(new Date());
+
   const [date, setDate] = useState(initialParams.date);
   const [startTime, setStartTime] = useState(initialParams.startTime);
   const [endTime, setEndTime] = useState(initialParams.endTime);
@@ -67,6 +70,8 @@ export function RoomSearchClient({
     const errors: { fieldId?: string; message: string }[] = [];
     if (!date) {
       errors.push({ fieldId: 'filter-date', message: 'Date is required.' });
+    } else if (date < today) {
+      errors.push({ fieldId: 'filter-date', message: 'Cannot search rooms for a past date.' });
     }
     if (!startTime) {
       errors.push({ fieldId: 'filter-start', message: 'Start time is required.' });
@@ -295,6 +300,7 @@ export function RoomSearchClient({
               id="filter-date"
               label="Date"
               type="date"
+              min={today}
               required
               value={date}
               onChange={(e) => setDate(e.target.value)}
