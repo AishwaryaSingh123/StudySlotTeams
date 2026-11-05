@@ -18,12 +18,22 @@ export function FormErrorSummary({
   errors,
 }: FormErrorSummaryProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const prevErrorsKeyRef = useRef<string>('');
+
+  const currentErrorsKey = (errors || [])
+    .map((e) => `${e.fieldId || ''}:${e.message}`)
+    .join('|');
 
   useEffect(() => {
-    if (errors.length > 0 && containerRef.current) {
-      containerRef.current.focus();
+    // Only focus the summary when errors are newly introduced or changed,
+    // not on every parent re-render caused by typing in an input field.
+    if (errors && errors.length > 0 && currentErrorsKey !== prevErrorsKeyRef.current) {
+      prevErrorsKeyRef.current = currentErrorsKey;
+      containerRef.current?.focus();
+    } else if (!errors || errors.length === 0) {
+      prevErrorsKeyRef.current = '';
     }
-  }, [errors]);
+  }, [errors, currentErrorsKey]);
 
   if (!errors || errors.length === 0) return null;
 
