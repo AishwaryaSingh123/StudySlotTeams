@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getSessionUser, setSessionUser } from '../../lib/auth/session';
-import { getAuthRepo } from '../../lib/repo';
+import { getAuthRepo, isUsingSupabase } from '../../lib/repo';
+import { Profile } from '../../lib/repo/types';
 import { LoginForm } from './LoginForm';
 
 export const metadata = {
@@ -18,7 +19,7 @@ async function handleSignIn(formData: FormData): Promise<{ ok: boolean; error?: 
       return { ok: false, error: 'Please enter both email and password.' };
     }
 
-    const isSupabase = process.env.DATA_BACKEND === 'supabase';
+    const isSupabase = isUsingSupabase();
 
     if (!isSupabase) {
       const authRepo = getAuthRepo();
@@ -56,10 +57,28 @@ async function handleSignIn(formData: FormData): Promise<{ ok: boolean; error?: 
           return { ok: false, error: error?.message || 'Invalid email or password.' };
         }
 
-        await setSessionUser(data.user.id);
-
         const authRepo = getAuthRepo();
-        const profile = await authRepo.getUserById(data.user.id);
+        let profile = await authRepo.getUserById(data.user.id);
+
+        if (!profile) {
+          const fullName = data.user.user_metadata?.full_name || email.split('@')[0];
+          const { data: newProfile } = await supabase
+            .from('profiles')
+            .upsert({
+              id: data.user.id,
+              email: data.user.email || email,
+              full_name: fullName,
+              role: 'student',
+            })
+            .select()
+            .maybeSingle();
+
+          if (newProfile) {
+            profile = newProfile as Profile;
+          }
+        }
+
+        await setSessionUser(profile || data.user.id);
         const redirectUrl = profile?.role === 'staff_admin' ? '/staff/rooms' : '/rooms';
         return { ok: true, redirectUrl };
       } catch (err: any) {
@@ -90,7 +109,7 @@ async function handleSignUp(formData: FormData): Promise<{ ok: boolean; error?: 
       return { ok: false, error: 'Password must be at least 6 characters long.' };
     }
 
-    const isSupabase = process.env.DATA_BACKEND === 'supabase';
+    const isSupabase = isUsingSupabase();
 
     if (!isSupabase) {
       const authRepo = getAuthRepo();

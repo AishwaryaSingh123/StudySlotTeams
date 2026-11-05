@@ -29,36 +29,50 @@ import { SupabaseMilestoneRepo } from './supabase/milestones';
 import { SupabaseReportRepo } from './supabase/reports';
 import { SupabaseRulesRepo } from './supabase/rules';
 
-const isSupabase = process.env.DATA_BACKEND === 'supabase';
+export function isUsingSupabase(): boolean {
+  if (process.env.DATA_BACKEND === 'mock') {
+    return false;
+  }
+  if (process.env.DATA_BACKEND === 'supabase') {
+    return true;
+  }
+  // Auto-detect: if Supabase credentials exist, automatically use Supabase!
+  const hasUrl = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_URL.trim() !== '');
+  const hasKey = Boolean(
+    (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.trim() !== '') ||
+    (process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.SUPABASE_SERVICE_ROLE_KEY.trim() !== '')
+  );
+  return hasUrl && hasKey;
+}
 
 export function getAuthRepo(): IAuthRepo {
-  return isSupabase ? new SupabaseAuthRepo() : new MockAuthRepo();
+  return isUsingSupabase() ? new SupabaseAuthRepo() : new MockAuthRepo();
 }
 
 export function getRoomRepo(): IRoomRepo {
-  return isSupabase ? new SupabaseRoomRepo() : new MockRoomRepo();
+  return isUsingSupabase() ? new SupabaseRoomRepo() : new MockRoomRepo();
 }
 
 export function getBookingRepo(): IBookingRepo {
-  return isSupabase ? new SupabaseBookingRepo() : new MockBookingRepo();
+  return isUsingSupabase() ? new SupabaseBookingRepo() : new MockBookingRepo();
 }
 
 export function getTeamRepo(): ITeamRepo {
-  return isSupabase ? new SupabaseTeamRepo() : new MockTeamRepo();
+  return isUsingSupabase() ? new SupabaseTeamRepo() : new MockTeamRepo();
 }
 
 export function getTaskRepo(): ITaskRepo {
-  return isSupabase ? new SupabaseTaskRepo() : new MockTaskRepo();
+  return isUsingSupabase() ? new SupabaseTaskRepo() : new MockTaskRepo();
 }
 
 export function getMilestoneRepo(): IMilestoneRepo {
-  return isSupabase ? new SupabaseMilestoneRepo() : new MockMilestoneRepo();
+  return isUsingSupabase() ? new SupabaseMilestoneRepo() : new MockMilestoneRepo();
 }
 
 export function getReportRepo(): IReportRepo {
-  return isSupabase ? new SupabaseReportRepo() : new MockReportRepo();
+  return isUsingSupabase() ? new SupabaseReportRepo() : new MockReportRepo();
 }
 
 export function getRulesRepo(): IRulesRepo {
-  return isSupabase ? new SupabaseRulesRepo() : new MockRulesRepo();
+  return isUsingSupabase() ? new SupabaseRulesRepo() : new MockRulesRepo();
 }

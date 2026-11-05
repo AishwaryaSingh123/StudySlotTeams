@@ -215,21 +215,22 @@ export class SupabaseBookingRepo implements IBookingRepo {
     }
 
     const newId = `b-${Date.now().toString(36)}`;
-    const { data: rpcRes, error: rpcError } = await supabase.rpc('rpc_create_booking', {
-      p_id: newId,
-      p_room_id: input.roomId,
-      p_starts_at: input.startsAt,
-      p_ends_at: input.endsAt,
-      p_purpose: input.purpose || '',
-      p_team_id: null,
+    const { error: insertError } = await supabase.from('bookings').insert({
+      id: newId,
+      room_id: input.roomId,
+      created_by: userId,
+      starts_at: input.startsAt,
+      ends_at: input.endsAt,
+      purpose: input.purpose || '',
+      status: 'confirmed',
     });
 
-    if (rpcError) {
-      return { ok: false, error: { code: 'INTERNAL', message: rpcError.message } };
-    }
-
-    if (!rpcRes.ok) {
-      if (rpcRes.code === 'CONFLICT') {
+    if (insertError) {
+      if (
+        insertError.code === '23P01' ||
+        insertError.message?.toLowerCase().includes('overlap') ||
+        insertError.message?.toLowerCase().includes('conflict')
+      ) {
         const nextFree = findNextFreeSlot(
           room,
           getCampusDateString(input.startsAt),
@@ -247,7 +248,7 @@ export class SupabaseBookingRepo implements IBookingRepo {
           },
         };
       }
-      return { ok: false, error: { code: rpcRes.code, message: rpcRes.message } };
+      return { ok: false, error: { code: 'INTERNAL', message: insertError.message } };
     }
 
     const created = await this.getBooking(newId);

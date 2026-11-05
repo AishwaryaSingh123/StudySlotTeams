@@ -2,7 +2,7 @@
 
 import { cookies } from 'next/headers';
 import { Profile } from '../repo/types';
-import { getAuthRepo } from '../repo';
+import { getAuthRepo, isUsingSupabase } from '../repo';
 
 const SESSION_COOKIE_NAME = 'studyslot_session';
 
@@ -21,7 +21,7 @@ export async function getSessionUser(): Promise<Profile | null> {
       const parsed = JSON.parse(rawVal);
       if (parsed.id && parsed.email && parsed.role) {
         // Sync into mock in-memory DB so local queries find the user
-        if (process.env.DATA_BACKEND !== 'supabase') {
+        if (!isUsingSupabase()) {
           try {
             const { getDb } = await import('../repo/mock/store');
             const db = await getDb();

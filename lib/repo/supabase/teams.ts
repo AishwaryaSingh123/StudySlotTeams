@@ -110,19 +110,38 @@ export class SupabaseTeamRepo implements ITeamRepo {
     const teamId = `team-${Date.now().toString(36)}`;
     const joinCode = generateJoinCode();
 
-    const { data: rpcRes, error: rpcError } = await supabase.rpc('rpc_create_team', {
-      p_team_id: teamId,
-      p_name: trimmedName,
-      p_join_code: joinCode,
+    // Check name conflict for this creator
+    const { data: existing } = await supabase
+      .from('teams')
+      .select('id')
+      .eq('created_by', userId)
+      .ilike('name', trimmedName)
+      .maybeSingle();
+
+    if (existing) {
+      return {
+        ok: false,
+        error: { code: 'CONFLICT', message: 'You already lead a team with this name.' },
+      };
+    }
+
+    const { error: teamError } = await supabase.from('teams').insert({
+      id: teamId,
+      name: trimmedName,
+      project_name: trimmedProject,
+      join_code: joinCode,
+      created_by: userId,
     });
 
-    if (rpcError) {
-      return { ok: false, error: { code: 'INTERNAL', message: rpcError.message } };
+    if (teamError) {
+      return { ok: false, error: { code: 'INTERNAL', message: teamError.message } };
     }
 
-    if (!rpcRes.ok) {
-      return { ok: false, error: { code: rpcRes.code, message: rpcRes.message } };
-    }
+    await supabase.from('team_members').insert({
+      team_id: teamId,
+      user_id: userId,
+      role: 'lead',
+    });
 
     const created = await this.getTeam(teamId);
     return {
@@ -334,21 +353,23 @@ export class SupabaseTeamRepo implements ITeamRepo {
     }
 
     const newBookingId = `b-team-${Date.now().toString(36)}`;
-    const { data: rpcRes, error: rpcError } = await supabase.rpc('rpc_create_booking', {
-      p_id: newBookingId,
-      p_room_id: roomId,
-      p_starts_at: startsAt,
-      p_ends_at: endsAt,
-      p_purpose: input.purpose || `Team Session: ${teamData.name}`,
-      p_team_id: teamId,
+    const { error: bookingError } = await supabase.from('bookings').insert({
+      id: newBookingId,
+      room_id: roomId,
+      created_by: callerId,
+      team_id: teamId,
+      starts_at: startsAt,
+      ends_at: endsAt,
+      purpose: input.purpose || `Team Session: ${teamData.name}`,
+      status: 'confirmed',
     });
 
-    if (rpcError) {
-      return { ok: false, error: { code: 'INTERNAL', message: rpcError.message } };
-    }
-
-    if (!rpcRes.ok) {
-      if (rpcRes.code === 'CONFLICT') {
+    if (bookingError) {
+      if (
+        bookingError.code === '23P01' ||
+        bookingError.message?.toLowerCase().includes('overlap') ||
+        bookingError.message?.toLowerCase().includes('conflict')
+      ) {
         const nextFree = findNextFreeSlot(
           room,
           getCampusDateString(startsAt),
@@ -368,7 +389,7 @@ export class SupabaseTeamRepo implements ITeamRepo {
           },
         };
       }
-      return { ok: false, error: { code: rpcRes.code, message: rpcRes.message } };
+      return { ok: false, error: { code: 'INTERNAL', message: bookingError.message } };
     }
 
     if (taskIds && taskIds.length > 0) {
