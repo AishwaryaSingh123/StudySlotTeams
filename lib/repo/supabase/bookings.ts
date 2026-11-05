@@ -350,4 +350,85 @@ export class SupabaseBookingRepo implements IBookingRepo {
         : undefined,
     }));
   }
+
+  async getUnacknowledgedCancellations(userId: string): Promise<Booking[]> {
+    const supabase = getSupabaseClient();
+    const { data: bookings, error } = await supabase
+      .from('bookings')
+      .select('*, rooms(*), profiles!bookings_created_by_fkey(*), teams(*)')
+      .eq('created_by', userId)
+      .eq('status', 'cancelled');
+
+    if (error || !bookings) return [];
+
+    return bookings
+      .filter((b: any) => {
+        if (b.cancellation_notified === true) return false;
+        return (
+          b.cancellation_notified === false ||
+          Boolean(b.cancellation_reason) ||
+          (Boolean(b.cancelled_by) && b.cancelled_by !== userId)
+        );
+      })
+      .map((b: any) => ({
+        id: b.id,
+        room_id: b.room_id,
+        booked_by: b.created_by,
+        team_id: b.team_id || null,
+        starts_at: b.starts_at,
+        ends_at: b.ends_at,
+        purpose: b.purpose,
+        status: b.status,
+        created_at: b.created_at,
+        cancelled_at: b.cancelled_at || null,
+        cancellation_reason: b.cancellation_reason || 'Administrative or campus blackout cancellation',
+        cancellation_notified: Boolean(b.cancellation_notified),
+        cancelled_by: b.cancelled_by || null,
+        room: b.rooms
+          ? {
+              id: b.rooms.id,
+              name: b.rooms.name,
+              building: b.rooms.building,
+              floor: b.rooms.floor,
+              capacity: b.rooms.capacity,
+              opens_at: b.rooms.opens_at || '08:00:00',
+              closes_at: b.rooms.closes_at || '22:00:00',
+              status: b.rooms.status || (b.rooms.is_active ? 'active' : 'inactive'),
+              equipment: [],
+            }
+          : undefined,
+        team: b.teams
+          ? {
+              id: b.teams.id,
+              name: b.teams.name,
+              project_name: b.teams.project_name || '',
+              join_code: b.teams.join_code || '',
+              created_by: b.teams.created_by,
+              created_at: b.teams.created_at,
+            }
+          : null,
+      }));
+  }
+
+  async dismissCancellationNotice(userId: string, bookingId: string): Promise<Result<void>> {
+    const supabase = getSupabaseClient();
+    try {
+      if (bookingId === 'all') {
+        await supabase
+          .from('bookings')
+          .update({ cancellation_notified: true })
+          .eq('created_by', userId)
+          .eq('status', 'cancelled');
+      } else {
+        await supabase
+          .from('bookings')
+          .update({ cancellation_notified: true })
+          .eq('id', bookingId)
+          .eq('created_by', userId);
+      }
+    } catch {
+      // Ignored if column missing on remote table
+    }
+    return { ok: true, data: undefined };
+  }
 }

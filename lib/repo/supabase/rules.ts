@@ -165,7 +165,27 @@ export class SupabaseRulesRepo implements IRulesRepo {
     });
 
     for (const b of affected) {
-      await supabase.from('bookings').update({ status: 'cancelled', cancelled_at: new Date().toISOString() }).eq('id', b.id);
+      const cancelReason = `Blackout date: ${reason || blk.reason}`;
+      const cancelPayload: any = {
+        status: 'cancelled',
+        cancelled_at: new Date().toISOString(),
+        cancelled_by: callerId,
+        cancellation_reason: cancelReason,
+        cancellation_notified: false,
+      };
+
+      const { error: updateError } = await supabase.from('bookings').update(cancelPayload).eq('id', b.id);
+      if (updateError) {
+        // Fallback if custom columns don't exist yet
+        await supabase
+          .from('bookings')
+          .update({
+            status: 'cancelled',
+            cancelled_at: cancelPayload.cancelled_at,
+            cancelled_by: callerId,
+          })
+          .eq('id', b.id);
+      }
     }
 
     return {

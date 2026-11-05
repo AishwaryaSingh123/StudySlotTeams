@@ -84,6 +84,9 @@ export interface Booking {
   status: BookingStatus;
   created_at: string;
   cancelled_at: string | null;
+  cancellation_reason?: string | null;
+  cancellation_notified?: boolean;
+  cancelled_by?: string | null;
   // Joined fields for display
   room?: Room;
   team?: Team | null;
@@ -269,6 +272,8 @@ export interface IBookingRepo {
   cancelBooking(userId: string, bookingId: string): Promise<Result<Booking>>;
   undoCancelBooking(userId: string, cancelledBookingId: string): Promise<Result<Booking>>;
   listFutureBookingsForRoom(roomId: string): Promise<Booking[]>;
+  getUnacknowledgedCancellations(userId: string): Promise<Booking[]>;
+  dismissCancellationNotice(userId: string, bookingId: string): Promise<Result<void>>;
 }
 
 export interface ITeamRepo {

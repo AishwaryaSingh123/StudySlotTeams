@@ -242,4 +242,47 @@ export class MockBookingRepo implements IBookingRepo {
       (b) => b.room_id === roomId && b.status === 'confirmed' && new Date(b.ends_at) > now
     );
   }
+
+  async getUnacknowledgedCancellations(userId: string): Promise<Booking[]> {
+    const db = await getDb();
+    return db.bookings
+      .filter((b) => {
+        if (b.booked_by !== userId) return false;
+        if (b.status !== 'cancelled') return false;
+        if (b.cancellation_notified === true) return false;
+        return (
+          b.cancellation_notified === false ||
+          Boolean(b.cancellation_reason) ||
+          (Boolean(b.cancelled_by) && b.cancelled_by !== userId)
+        );
+      })
+      .map((b) => {
+        const room = db.rooms.find((r) => r.id === b.room_id);
+        const team = b.team_id ? db.teams.find((t) => t.id === b.team_id) : null;
+        return {
+          ...b,
+          room,
+          team,
+        };
+      });
+  }
+
+  async dismissCancellationNotice(userId: string, bookingId: string): Promise<Result<void>> {
+    return withLock((db) => {
+      if (bookingId === 'all') {
+        db.bookings
+          .filter((b) => b.booked_by === userId && b.status === 'cancelled')
+          .forEach((b) => {
+            b.cancellation_notified = true;
+          });
+        return { ok: true, data: undefined };
+      }
+
+      const b = db.bookings.find((item) => item.id === bookingId && item.booked_by === userId);
+      if (b) {
+        b.cancellation_notified = true;
+      }
+      return { ok: true, data: undefined };
+    });
+  }
 }

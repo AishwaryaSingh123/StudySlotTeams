@@ -158,6 +158,9 @@ export class MockRulesRepo implements IRulesRepo {
       for (const b of affected) {
         b.status = 'cancelled';
         b.cancelled_at = new Date().toISOString();
+        b.cancellation_reason = `Blackout date: ${reason || blk.reason}`;
+        b.cancellation_notified = false;
+        b.cancelled_by = callerId;
 
         const student = db.profiles.find((p) => p.id === b.booked_by);
         if (student && !notifiedNames.includes(student.full_name)) {
