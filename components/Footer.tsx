@@ -23,9 +23,6 @@ export function Footer() {
           <p style={{ margin: 0, fontWeight: 600 }}>
             StudySlot Teams — Reading-Room Ledger Academic System
           </p>
-          <p style={{ margin: '4px 0 0 0', fontSize: '0.95rem', color: 'var(--color-slate)' }}>
-            Demo notice: All users, rooms, tasks, and bookings are fictional mock data.
-          </p>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
