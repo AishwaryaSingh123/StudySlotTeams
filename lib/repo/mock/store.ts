@@ -33,10 +33,16 @@ export interface MockDatabase {
 // In serverless environments like Vercel, process.cwd() is read-only.
 // os.tmpdir() (/tmp) provides writable storage.
 const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+const isTest = Boolean(process.env.VITEST || process.env.NODE_ENV === 'test');
+
 const RUNTIME_DIR = isServerless
   ? path.join(os.tmpdir(), 'studyslot-runtime')
   : path.join(process.cwd(), 'data', '.runtime');
-const DB_FILE = path.join(RUNTIME_DIR, 'db.json');
+
+const DB_FILE = isTest
+  ? path.join(RUNTIME_DIR, 'test-db.json')
+  : path.join(RUNTIME_DIR, 'db.json');
+
 const SEED_DIR = path.join(process.cwd(), 'data', 'seed');
 
 // In-process memory singleton so mutations persist in memory even if disk write fails

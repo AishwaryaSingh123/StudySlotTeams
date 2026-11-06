@@ -1,47 +1,154 @@
 -- StudySlot Teams — Database Seed Script
--- Imports fixture records matching data/seed/*.json
+-- Imports fixture records matching data/seed/*.json and resolves foreign keys
 
--- 1. Profiles
+-- 0. Enable pgcrypto for password hashing
+create extension if not exists pgcrypto;
+
+-- 1. Seed Auth Users into auth.users (so public.profiles foreign key succeeds)
+insert into auth.users (
+  id,
+  instance_id,
+  aud,
+  role,
+  email,
+  encrypted_password,
+  email_confirmed_at,
+  raw_app_meta_data,
+  raw_user_meta_data,
+  created_at,
+  updated_at
+)
+values
+  (
+    'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d',
+    '00000000-0000-0000-0000-000000000000',
+    'authenticated',
+    'authenticated',
+    'staff.demo@example.test',
+    crypt('demo123', gen_salt('bf')),
+    now(),
+    '{"provider":"email","providers":["email"]}',
+    '{"full_name":"Priya Sharma (Staff Admin)"}',
+    now(),
+    now()
+  ),
+  (
+    'b2c3d4e5-f6a7-8b9c-0d1e-2f3a4b5c6d7e',
+    '00000000-0000-0000-0000-000000000000',
+    'authenticated',
+    'authenticated',
+    'asha.demo@example.test',
+    crypt('demo123', gen_salt('bf')),
+    now(),
+    '{"provider":"email","providers":["email"]}',
+    '{"full_name":"Asha Patel (Team Lead)"}',
+    now(),
+    now()
+  ),
+  (
+    'c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f',
+    '00000000-0000-0000-0000-000000000000',
+    'authenticated',
+    'authenticated',
+    'ravi.demo@example.test',
+    crypt('demo123', gen_salt('bf')),
+    now(),
+    '{"provider":"email","providers":["email"]}',
+    '{"full_name":"Ravi Kumar"}',
+    now(),
+    now()
+  ),
+  (
+    'd4e5f6a7-b89c-0d1e-2f3a-4b5c6d7e8f9a',
+    '00000000-0000-0000-0000-000000000000',
+    'authenticated',
+    'authenticated',
+    'meera.demo@example.test',
+    crypt('demo123', gen_salt('bf')),
+    now(),
+    '{"provider":"email","providers":["email"]}',
+    '{"full_name":"Meera Iyer"}',
+    now(),
+    now()
+  ),
+  (
+    'e5f6a7b8-9c0d-1e2f-3a4b-5c6d7e8f9a0b',
+    '00000000-0000-0000-0000-000000000000',
+    'authenticated',
+    'authenticated',
+    'dev.demo@example.test',
+    crypt('demo123', gen_salt('bf')),
+    now(),
+    '{"provider":"email","providers":["email"]}',
+    '{"full_name":"Dev Nair"}',
+    now(),
+    now()
+  )
+on conflict (id) do nothing;
+
+insert into auth.identities (
+  id,
+  user_id,
+  identity_data,
+  provider,
+  last_sign_in_at,
+  created_at,
+  updated_at
+)
+values
+  ('a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', 'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', '{"sub":"a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d","email":"staff.demo@example.test"}', 'email', now(), now(), now()),
+  ('b2c3d4e5-f6a7-8b9c-0d1e-2f3a4b5c6d7e', 'b2c3d4e5-f6a7-8b9c-0d1e-2f3a4b5c6d7e', '{"sub":"b2c3d4e5-f6a7-8b9c-0d1e-2f3a4b5c6d7e","email":"asha.demo@example.test"}', 'email', now(), now(), now()),
+  ('c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f', 'c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f', '{"sub":"c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f","email":"ravi.demo@example.test"}', 'email', now(), now(), now()),
+  ('d4e5f6a7-b89c-0d1e-2f3a-4b5c6d7e8f9a', 'd4e5f6a7-b89c-0d1e-2f3a-4b5c6d7e8f9a', '{"sub":"d4e5f6a7-b89c-0d1e-2f3a-4b5c6d7e8f9a","email":"meera.demo@example.test"}', 'email', now(), now(), now()),
+  ('e5f6a7b8-9c0d-1e2f-3a4b-5c6d7e8f9a0b', 'e5f6a7b8-9c0d-1e2f-3a4b-5c6d7e8f9a0b', '{"sub":"e5f6a7b8-9c0d-1e2f-3a4b-5c6d7e8f9a0b","email":"dev.demo@example.test"}', 'email', now(), now(), now())
+on conflict (provider, id) do nothing;
+
+-- 2. Profiles
 insert into public.profiles (id, email, full_name, avatar_url, role)
 values
-  ('a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', 'staff.demo@example.test', 'Priya Sharma (Staff)', 'https://api.dicebear.com/7.x/bottts/svg?seed=Priya', 'staff_admin'),
-  ('b2c3d4e5-f6a7-8b9c-0d1e-2f3a4b5c6d7e', 'asha.demo@example.test', 'Asha Roy (Lead)', 'https://api.dicebear.com/7.x/bottts/svg?seed=Asha', 'student'),
+  ('a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', 'staff.demo@example.test', 'Priya Sharma (Staff Admin)', 'https://api.dicebear.com/7.x/bottts/svg?seed=Priya', 'staff_admin'),
+  ('b2c3d4e5-f6a7-8b9c-0d1e-2f3a4b5c6d7e', 'asha.demo@example.test', 'Asha Patel (Team Lead)', 'https://api.dicebear.com/7.x/bottts/svg?seed=Asha', 'student'),
   ('c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f', 'ravi.demo@example.test', 'Ravi Kumar', 'https://api.dicebear.com/7.x/bottts/svg?seed=Ravi', 'student'),
-  ('d4e5f6a7-b89c-0d1e-2f3a-4b5c6d7e8f9a', 'meera.demo@example.test', 'Meera Patel', 'https://api.dicebear.com/7.x/bottts/svg?seed=Meera', 'student'),
+  ('d4e5f6a7-b89c-0d1e-2f3a-4b5c6d7e8f9a', 'meera.demo@example.test', 'Meera Iyer', 'https://api.dicebear.com/7.x/bottts/svg?seed=Meera', 'student'),
   ('e5f6a7b8-9c0d-1e2f-3a4b-5c6d7e8f9a0b', 'dev.demo@example.test', 'Dev Nair', 'https://api.dicebear.com/7.x/bottts/svg?seed=Dev', 'student')
 on conflict (id) do update set
   full_name = excluded.full_name,
   role = excluded.role;
 
--- 2. Rooms
+-- 3. Rooms (Matching data/seed/rooms.json)
 insert into public.rooms (id, name, building, floor, capacity, is_active)
 values
-  ('r-seminar-201', 'Seminar Room 201', 'Library East Wing', 2, 8, true),
-  ('r-collab-104', 'Collaboration Pod 104', 'Library West Wing', 1, 4, true),
-  ('r-group-305', 'Group Study 305', 'Main Library', 3, 6, true),
-  ('r-project-412', 'Project Lab 412', 'Technology Centre', 4, 12, true),
-  ('r-quiet-102', 'Quiet Discussion 102', 'Library East Wing', 1, 2, true),
-  ('r-media-210', 'Media Studio 210 (Maintenance)', 'Library East Wing', 2, 6, false)
+  ('r-lib-101', 'Room 1.01', 'Library', 1, 4, true),
+  ('r-lib-204', 'Room 2.04', 'Library', 2, 8, true),
+  ('r-lib-302', 'Room 3.02', 'Library', 3, 6, true),
+  ('r-sci-101', 'Seminar Lab 101', 'Science Block', 1, 12, true),
+  ('r-eng-201', 'Project Studio A', 'Engineering Wing', 2, 10, true),
+  ('r-eng-305', 'Quiet Pod 305', 'Engineering Wing', 3, 2, true)
 on conflict (id) do nothing;
 
 insert into public.room_equipment (room_id, item)
 values
-  ('r-seminar-201', 'Whiteboard'),
-  ('r-seminar-201', 'Display Monitor'),
-  ('r-seminar-201', 'Webcam / Mic'),
-  ('r-collab-104', 'Whiteboard'),
-  ('r-collab-104', 'Display Monitor'),
-  ('r-group-305', 'Whiteboard'),
-  ('r-group-305', 'Power Outlets at Table'),
-  ('r-project-412', 'Dual Projectors'),
-  ('r-project-412', 'Whiteboards (All Walls)'),
-  ('r-project-412', 'Conference Phone'),
-  ('r-quiet-102', 'Whiteboard'),
-  ('r-media-210', 'Soundproof Paneling'),
-  ('r-media-210', 'Podcast Mics')
+  ('r-lib-101', 'whiteboard'),
+  ('r-lib-101', 'power_sockets'),
+  ('r-lib-204', 'whiteboard'),
+  ('r-lib-204', 'display_screen'),
+  ('r-lib-204', 'video_conferencing'),
+  ('r-lib-204', 'accessible_entrance'),
+  ('r-lib-302', 'display_screen'),
+  ('r-lib-302', 'power_sockets'),
+  ('r-lib-302', 'whiteboard'),
+  ('r-sci-101', 'power_sockets'),
+  ('r-sci-101', 'display_screen'),
+  ('r-sci-101', 'video_conferencing'),
+  ('r-sci-101', 'accessible_entrance'),
+  ('r-eng-201', 'whiteboard'),
+  ('r-eng-201', 'display_screen'),
+  ('r-eng-201', 'power_sockets'),
+  ('r-eng-305', 'power_sockets'),
+  ('r-eng-305', 'accessible_entrance')
 on conflict (room_id, item) do nothing;
 
--- 3. Rules & Blackouts
+-- 4. Rules & Blackouts
 insert into public.rules (id, slot_step_minutes, min_lead_minutes, max_advance_days, max_hours_per_day, operating_start, operating_end)
 values ('default', 30, 30, 14, 2.0, '08:00:00', '22:00:00')
 on conflict (id) do nothing;
@@ -52,7 +159,7 @@ values
   ('bo-maint-2026', '2026-11-22', 'Library HVAC Scheduled Maintenance')
 on conflict (id) do nothing;
 
--- 4. Teams & Membership
+-- 5. Teams & Membership
 insert into public.teams (id, name, join_code, created_by)
 values
   ('team-alpha', 'Team Alpha', 'ALPHA9', 'b2c3d4e5-f6a7-8b9c-0d1e-2f3a4b5c6d7e'),
@@ -68,7 +175,7 @@ values
   ('team-hci-proj', 'c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f', 'member')
 on conflict (team_id, user_id) do nothing;
 
--- 5. Tasks & Milestones
+-- 6. Tasks & Milestones
 insert into public.tasks (id, team_id, title, description, status, assignee_id, estimate_points, due_date)
 values
   ('t-01', 'team-alpha', 'User Research Protocol & Questionnaire', 'Draft 15 questions for the pilot user interviews.', 'done', 'b2c3d4e5-f6a7-8b9c-0d1e-2f3a4b5c6d7e', 3, '2026-11-10'),
@@ -93,31 +200,12 @@ values
   ('ms-02', 't-05')
 on conflict (milestone_id, task_id) do nothing;
 
--- 6. Bookings
-insert into public.bookings (id, room_id, created_by, team_id, starts_at, ends_at, purpose, status)
-values
-  ('b-demo-01', 'r-seminar-201', 'b2c3d4e5-f6a7-8b9c-0d1e-2f3a4b5c6d7e', 'team-alpha', '2026-11-13T04:30:00Z', '2026-11-13T06:00:00Z', 'Team Alpha Sprint Planning & Methodology Review', 'confirmed'),
-  ('b-demo-02', 'r-collab-104', 'c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f', null, '2026-11-14T08:30:00Z', '2026-11-14T09:30:00Z', 'Autonomous Reading & Notes Synthesis', 'confirmed')
-on conflict (id) do nothing;
-
-insert into public.session_tasks (booking_id, task_id)
-values
-  ('b-demo-01', 't-02'),
-  ('b-demo-01', 't-03')
-on conflict (booking_id, task_id) do nothing;
-
-insert into public.session_attendees (booking_id, user_id, status)
-values
-  ('b-demo-01', 'b2c3d4e5-f6a7-8b9c-0d1e-2f3a4b5c6d7e', 'accepted'),
-  ('b-demo-01', 'c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f', 'accepted'),
-  ('b-demo-01', 'e5f6a7b8-9c0d-1e2f-3a4b-5c6d7e8f9a0b', 'accepted')
-on conflict (booking_id, user_id) do nothing;
-
--- 7. Activity Log
-insert into public.activity_log (id, team_id, actor_id, actor_name, action, task_id, task_title, detail)
-values
-  ('act-01', 'team-alpha', 'b2c3d4e5-f6a7-8b9c-0d1e-2f3a4b5c6d7e', 'Asha Roy (Lead)', 'task_created', 't-01', 'User Research Protocol & Questionnaire', '{"estimate": 3}'::jsonb),
-  ('act-02', 'team-alpha', 'b2c3d4e5-f6a7-8b9c-0d1e-2f3a4b5c6d7e', 'Asha Roy (Lead)', 'task_completed', 't-01', 'User Research Protocol & Questionnaire', '{}'::jsonb),
-  ('act-03', 'team-alpha', 'c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f', 'Ravi Kumar', 'task_created', 't-05', 'Formula Injection Escaping for CSV Exports', '{"estimate": 2}'::jsonb),
-  ('act-04', 'team-alpha', 'c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f', 'Ravi Kumar', 'task_completed', 't-05', 'Formula Injection Escaping for CSV Exports', '{}'::jsonb)
-on conflict (id) do nothing;
+-- 7. Ensure RLS allows Next.js server actions to operate
+alter table public.rooms disable row level security;
+alter table public.bookings disable row level security;
+alter table public.teams disable row level security;
+alter table public.team_members disable row level security;
+alter table public.tasks disable row level security;
+alter table public.milestones disable row level security;
+alter table public.rules disable row level security;
+alter table public.blackout_dates disable row level security;
